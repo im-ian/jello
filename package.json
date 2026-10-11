@@ -1,0 +1,56 @@
+{
+  "name": "jello",
+  "version": "0.1.0",
+  "description": "Jelly-like spring feedback for UI — squash, stretch and wobble on press, driven by real spring physics.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/im-ian/jello.git"
+  },
+  "homepage": "https://im-ian.github.io/jello/",
+  "bugs": {
+    "url": "https://github.com/im-ian/jello/issues"
+  },
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "unpkg": "./dist/jello.global.js",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./jello.css": "./dist/jello.css",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "animation",
+    "spring",
+    "jelly",
+    "squash-and-stretch",
+    "micro-interaction",
+    "web-animations"
+  ],
+  "scripts": {
+    "build": "tsup && node scripts/build-css.mjs",
+    "prepare": "npm run build",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "size": "node scripts/size.mjs",
+    "playground": "node scripts/build-playground.mjs",
+    "site": "node scripts/build-playground.mjs --site"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2",
+    "happy-dom": "^20.14.6",
+    "tsup": "^8.5.1",
+    "typescript": "~6.0.3",
+    "vitest": "^5.0.3"
+  }
+}

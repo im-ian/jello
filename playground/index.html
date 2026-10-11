@@ -1,0 +1,806 @@
+<title>jello</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;700&family=Shrikhand&display=swap">
+<style>
+/* Layout: one narrow column down a porcelain counter. Each demo sits on its own plate; text stays off the plates. */
+:root {
+  --bg: #f6f1f5;          /* porcelain counter, pink-biased */
+  --plate: #ffffff;
+  --ink: #2a1c2e;         /* plum-black */
+  --ink-soft: #6b5a6e;
+  --rule: #e6dbe5;
+  --accent: #d2234c;      /* raspberry */
+  --accent-ink: #ffffff;
+  --css-line: #4d62b8;    /* the "plain CSS" series */
+  --code-bg: #efe7ee;
+  --focus: #2f6bff;
+  --shadow: rgb(70 30 60 / 0.16);
+
+  /* jelly flavours, each with a readable label colour */
+  --raspberry: #d7264f; --on-raspberry: #ffffff;
+  --blueberry: #3f57c9; --on-blueberry: #ffffff;
+  --apricot: #f2a043;   --on-apricot: #2a1c2e;
+  --lime: #8acb4a;      --on-lime: #20301a;
+
+  --f-display: "Shrikhand", "Georgia", serif;
+  --f-body: "IBM Plex Sans KR", -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+
+  --step--1: 0.8125rem;
+  --step-0: 0.9375rem;
+  --step-1: 1.25rem;
+  --step-2: 1.6rem;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #1a121e; --plate: #241a29; --ink: #f4eaf3; --ink-soft: #b8a6ba; --rule: #3a2d41;
+    --accent: #ff5a80; --accent-ink: #2b0a15; --css-line: #92a4f2; --code-bg: #2b2031;
+    --focus: #8fb0ff; --shadow: rgb(0 0 0 / 0.45);
+    --raspberry: #e83a63; --blueberry: #5a73e6; --apricot: #f5ab55; --lime: #94d457;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #1a121e; --plate: #241a29; --ink: #f4eaf3; --ink-soft: #b8a6ba; --rule: #3a2d41;
+  --accent: #ff5a80; --accent-ink: #2b0a15; --css-line: #92a4f2; --code-bg: #2b2031;
+  --focus: #8fb0ff; --shadow: rgb(0 0 0 / 0.45);
+  --raspberry: #e83a63; --blueberry: #5a73e6; --apricot: #f5ab55; --lime: #94d457;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--f-body);
+  font-size: var(--step-0);
+  line-height: 1.7;
+  padding-inline: 16px;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+.wrap { max-width: 660px; margin-inline: auto; padding-block: 20px 72px; display: grid; gap: 72px; }
+h1, h2, h3 { margin: 0; text-wrap: balance; }
+p { margin: 0; }
+a { color: var(--accent); text-underline-offset: 3px; }
+code, pre, .mono { font-family: var(--f-mono); }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+
+/* ------------------------------------------------------------ hero */
+.hero { display: grid; gap: 14px; }
+.hero-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.wordmark {
+  font-family: var(--f-display);
+  font-weight: 400;
+  font-size: clamp(4.2rem, 21vw, 7.5rem);
+  line-height: 0.95;
+  color: var(--accent);
+  letter-spacing: 0.01em;
+  user-select: none; -webkit-user-select: none;
+}
+.wordmark span { display: inline-block; transform-origin: 50% 90%; cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+.lede { font-size: var(--step-1); line-height: 1.55; max-width: 32em; }
+.meta { font-family: var(--f-mono); font-size: var(--step--1); color: var(--ink-soft); display: flex; flex-wrap: wrap; gap: 4px 14px; }
+
+.switch { display: inline-flex; align-items: center; gap: 8px; font-size: var(--step--1); color: var(--ink-soft); cursor: pointer; padding-block: 6px; }
+.switch input { width: 18px; height: 18px; accent-color: var(--accent); margin: 0; }
+
+.notice {
+  border: 1.5px solid var(--rule); border-radius: 14px; padding: 12px 14px; background: var(--plate);
+  display: grid; gap: 10px; font-size: var(--step--1);
+}
+.notice button { justify-self: start; }
+
+/* ------------------------------------------------------------ jelly */
+.stage {
+  position: relative; display: grid; place-items: center;
+  padding-block: 34px 26px; isolation: isolate;
+}
+.stage::after { /* the plate */
+  content: ""; position: absolute; z-index: -1; left: 50%; bottom: 14px;
+  width: min(300px, 86%); height: 34px; translate: -50% 0; border-radius: 50%;
+  background: radial-gradient(closest-side, var(--rule), transparent), var(--plate);
+  box-shadow: 0 1px 0 var(--rule) inset, 0 10px 18px -10px var(--shadow);
+}
+.jelly {
+  --f: var(--raspberry);
+  appearance: none; border: 0; padding: 0; font: inherit; color: inherit;
+  display: block; width: 168px; max-width: 100%; aspect-ratio: 1.2 / 1;
+  border-radius: 46% 46% 30% 30% / 62% 62% 26% 26%;
+  background:
+    radial-gradient(34% 20% at 32% 22%, rgb(255 255 255 / 0.78), rgb(255 255 255 / 0) 72%),
+    repeating-linear-gradient(90deg, rgb(255 255 255 / 0) 0 17%, rgb(255 255 255 / 0.12) 17% 19%),
+    radial-gradient(120% 80% at 50% 115%, color-mix(in oklab, var(--f), black 38%), transparent 62%),
+    linear-gradient(180deg, color-mix(in oklab, var(--f), white 24%), var(--f) 72%);
+  box-shadow:
+    inset 0 -12px 22px color-mix(in oklab, var(--f), black 26%),
+    inset 0 10px 18px rgb(255 255 255 / 0.26),
+    0 18px 26px -16px color-mix(in oklab, var(--f), black 45%);
+  transform-origin: 50% 100%;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+  user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+}
+.jelly-xl { width: 210px; }
+.jelly-sm { width: 112px; }
+.f-raspberry { --f: var(--raspberry); }
+.f-blueberry { --f: var(--blueberry); }
+.f-apricot { --f: var(--apricot); }
+.f-lime { --f: var(--lime); }
+.hint { color: var(--ink-soft); font-size: var(--step--1); text-align: center; }
+
+/* ------------------------------------------------------------ sections */
+section { display: grid; gap: 22px; }
+.head { display: grid; gap: 8px; }
+.api { font-family: var(--f-mono); font-size: var(--step--1); color: var(--ink-soft); letter-spacing: 0.01em; }
+.api::before { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); margin-right: 8px; translate: 0 -1px; }
+h2 { font-size: var(--step-2); line-height: 1.3; font-weight: 700; letter-spacing: -0.01em; }
+.head p { color: var(--ink-soft); max-width: 36em; }
+.panel { background: var(--plate); border-radius: 22px; padding: 18px; box-shadow: 0 1px 0 var(--rule), 0 14px 30px -24px var(--shadow); display: grid; gap: 16px; min-width: 0; }
+
+/* buttons */
+.btn {
+  --f: var(--accent); --on: var(--accent-ink);
+  appearance: none; border: 0; font: 600 var(--step-0)/1.2 var(--f-body);
+  padding: 13px 20px; border-radius: 999px; cursor: pointer;
+  background: var(--f); color: var(--on);
+  box-shadow: inset 0 -3px 0 color-mix(in oklab, var(--f), black 22%), 0 8px 16px -10px color-mix(in oklab, var(--f), black 30%);
+  -webkit-tap-highlight-color: transparent; touch-action: manipulation; user-select: none; -webkit-user-select: none;
+  white-space: nowrap;
+}
+.btn.f-raspberry { --f: var(--raspberry); --on: var(--on-raspberry); }
+.btn.f-blueberry { --f: var(--blueberry); --on: var(--on-blueberry); }
+.btn.f-apricot { --f: var(--apricot); --on: var(--on-apricot); }
+.btn.f-lime { --f: var(--lime); --on: var(--on-lime); }
+.chip {
+  appearance: none; font: 500 var(--step--1)/1.2 var(--f-body); cursor: pointer;
+  border: 1.5px solid var(--rule); background: var(--plate); color: var(--ink);
+  border-radius: 999px; padding: 9px 13px; display: inline-flex; gap: 7px; align-items: baseline;
+  -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+}
+.chip code { font-size: 0.75rem; color: var(--accent); }
+.ghost {
+  appearance: none; font: 500 var(--step--1)/1.2 var(--f-body); cursor: pointer;
+  border: 1.5px solid var(--rule); background: transparent; color: var(--ink-soft);
+  border-radius: 10px; padding: 7px 12px; touch-action: manipulation;
+}
+
+/* presets */
+.flavors { display: grid; gap: 0; }
+.flavor { display: grid; grid-template-columns: minmax(0, 9.5rem) minmax(0, 1fr); gap: 16px; align-items: center; padding-block: 16px; border-top: 1px solid var(--rule); }
+.flavor:first-child { border-top: 0; padding-top: 4px; }
+.flavor:last-child { padding-bottom: 4px; }
+.flavor .btn { justify-self: start; }
+.flavor .name { font-family: var(--f-mono); font-size: var(--step--1); color: var(--ink); font-weight: 500; }
+.flavor .name em { font-style: normal; color: var(--accent); margin-left: 6px; font-family: var(--f-body); }
+.flavor .desc { font-size: var(--step--1); color: var(--ink-soft); }
+.flavor .stats { font-family: var(--f-mono); font-size: 0.75rem; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+
+/* effects */
+.chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.real { display: grid; gap: 14px; border-top: 1px solid var(--rule); padding-top: 16px; }
+.real h3 { font-size: var(--step--1); font-weight: 700; color: var(--ink-soft); letter-spacing: 0.02em; }
+.login { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.login input {
+  flex: 1 1 10rem; min-width: 0; font: var(--step-0) var(--f-body); color: var(--ink);
+  background: var(--bg); border: 1.5px solid var(--rule); border-radius: 12px; padding: 11px 13px;
+}
+.login .msg { flex-basis: 100%; font-size: var(--step--1); color: var(--accent); min-height: 1.4em; }
+.shop { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.cart { position: relative; width: 48px; height: 44px; display: grid; place-items: center; transform-origin: 50% 100%; }
+.cart svg { width: 34px; height: 34px; }
+.cart svg path { fill: none; stroke: var(--ink); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.badge {
+  position: absolute; top: -2px; right: -4px; min-width: 22px; height: 22px; padding-inline: 6px; border-radius: 999px;
+  background: var(--accent); color: var(--accent-ink); font: 700 0.75rem/22px var(--f-mono); text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+/* tuning */
+.controls { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 18px; }
+.control { display: grid; gap: 4px; min-width: 0; }
+.control label { display: flex; justify-content: space-between; gap: 8px; font-size: var(--step--1); color: var(--ink-soft); }
+.control output { font-family: var(--f-mono); color: var(--ink); font-variant-numeric: tabular-nums; }
+.control input { width: 100%; accent-color: var(--accent); margin: 0; }
+.tune-view { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr); gap: 14px; align-items: center; }
+.tune-view .stage { padding-block: 22px 20px; }
+.curve { width: 100%; height: auto; display: block; }
+.curve text { font: 10px var(--f-mono); fill: var(--ink-soft); }
+.stat-row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.stat { display: grid; gap: 2px; min-width: 0; }
+.stat span { font-size: 0.72rem; color: var(--ink-soft); }
+.stat b { font: 500 var(--step-0) var(--f-mono); font-variant-numeric: tabular-nums; }
+.codebox { display: grid; gap: 8px; min-width: 0; }
+.codebox-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.codebox-top span { font-size: var(--step--1); color: var(--ink-soft); }
+pre {
+  margin: 0; background: var(--code-bg); border-radius: 14px; padding: 14px 16px; overflow-x: auto;
+  font-size: 0.8rem; line-height: 1.65; color: var(--ink); max-width: 100%;
+}
+pre.wrapcode { white-space: pre-wrap; word-break: break-all; max-height: 9.5rem; overflow-y: auto; }
+.cm { color: var(--ink-soft); }
+
+/* components */
+.comp { gap: 0; padding-block: 4px; }
+.group { display: grid; gap: 12px; padding-block: 18px; border-top: 1px solid var(--rule); min-width: 0; }
+.group:first-child { border-top: 0; }
+.group h3 { font-size: var(--step-0); font-weight: 700; display: flex; flex-wrap: wrap; gap: 2px 10px; align-items: baseline; }
+.group h3 code { font-size: 0.72rem; font-weight: 400; color: var(--ink-soft); }
+.fields { display: grid; gap: 12px; }
+.fld { display: grid; gap: 6px; font-size: var(--step--1); color: var(--ink-soft); min-width: 0; }
+.fld input, .fld textarea, .fld select {
+  font: var(--step-0)/1.4 var(--f-body); color: var(--ink); background: var(--bg);
+  border: 1.5px solid var(--rule); border-radius: 12px; padding: 11px 13px; width: 100%; min-width: 0;
+}
+.fld textarea { resize: vertical; }
+.fields .btn { justify-self: start; }
+.note { font-size: 0.75rem; color: var(--ink-soft); }
+.row { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; }
+.opt { display: inline-flex; gap: 8px; align-items: center; font-size: var(--step--1); cursor: pointer; }
+.opt input { width: 20px; height: 20px; margin: 0; accent-color: var(--accent); }
+.switch-ui {
+  appearance: none; border: 0; padding: 0; width: 54px; height: 32px; border-radius: 999px; flex: none;
+  background: var(--rule); position: relative; cursor: pointer; transition: background-color 0.25s ease;
+  -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+}
+.switch-ui::before {
+  content: ""; position: absolute; top: 3px; left: 3px; width: 26px; height: 26px; border-radius: 50%;
+  background: var(--plate); box-shadow: 0 2px 6px var(--shadow);
+  transition: translate var(--thumb-dur, 0.5s) var(--thumb-ease, ease);
+}
+.switch-ui[aria-checked="true"] { background: var(--lime); }
+.switch-ui[aria-checked="true"]::before { translate: 22px 0; }
+.sw-text { display: grid; font-size: var(--step--1); line-height: 1.45; min-width: 0; }
+.sw-text small { font-size: 0.72rem; color: var(--ink-soft); }
+.chip[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+input[type="range"] { width: 100%; accent-color: var(--accent); }
+.tabs { display: flex; gap: 4px; background: var(--bg); padding: 4px; border-radius: 14px; width: fit-content; max-width: 100%; overflow-x: auto; }
+.tab {
+  appearance: none; border: 0; background: transparent; font: 600 var(--step--1)/1.2 var(--f-body); color: var(--ink-soft);
+  padding: 9px 14px; border-radius: 10px; cursor: pointer; white-space: nowrap;
+  -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+}
+.tab[aria-selected="true"] { background: var(--plate); color: var(--ink); box-shadow: 0 1px 0 var(--rule), 0 4px 10px -6px var(--shadow); }
+.tabpanel { font-size: var(--step--1); color: var(--ink-soft); }
+.acc { display: grid; gap: 8px; }
+.acc details { border: 1.5px solid var(--rule); border-radius: 14px; background: var(--plate); }
+.acc summary {
+  cursor: pointer; padding: 12px 14px; font-weight: 600; font-size: var(--step--1); list-style: none; border-radius: 12px;
+  display: flex; justify-content: space-between; gap: 12px; -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+}
+.acc summary::-webkit-details-marker { display: none; }
+.acc summary::after { content: "+"; color: var(--ink-soft); font-family: var(--f-mono); }
+.acc details[open] summary::after { content: "−"; }
+.acc details p { padding: 0 14px 14px; font-size: var(--step--1); color: var(--ink-soft); }
+.acc-item { border: 1.5px solid var(--rule); border-radius: 14px; background: var(--plate); }
+.acc-head {
+  appearance: none; border: 0; background: transparent; color: var(--ink); width: 100%; text-align: left;
+  font: 600 var(--step--1)/1.5 var(--f-body); padding: 12px 14px; border-radius: 12px; cursor: pointer;
+  display: flex; justify-content: space-between; gap: 12px; -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+}
+.acc-head::after { content: "+"; color: var(--ink-soft); font-family: var(--f-mono); }
+.acc-head[aria-expanded="true"]::after { content: "−"; }
+.acc-panel p { padding: 0 14px 14px; font-size: var(--step--1); color: var(--ink-soft); }
+.menu {
+  border: 1.5px solid var(--rule); border-radius: 16px; background: var(--plate); color: var(--ink);
+  padding: 6px; box-shadow: 0 18px 40px -16px var(--shadow); min-width: 12rem;
+}
+.menu button {
+  display: block; width: 100%; text-align: left; appearance: none; border: 0; background: transparent; color: var(--ink);
+  font: var(--step--1) var(--f-body); padding: 10px 12px; border-radius: 10px; cursor: pointer;
+}
+.dlg {
+  border: 0; border-radius: 22px; background: var(--plate); color: var(--ink); padding: 22px;
+  width: min(22rem, calc(100vw - 32px)); box-shadow: 0 30px 60px -20px var(--shadow);
+}
+.dlg::backdrop { background: rgb(20 10 25 / 0.35); }
+.dlg h3 { font-size: var(--step-1); margin-bottom: 6px; }
+.dlg p { font-size: var(--step--1); color: var(--ink-soft); }
+.dlg .actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
+.toasts {
+  position: fixed; left: 50%; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); translate: -50% 0;
+  display: grid; gap: 8px; z-index: 10; width: min(22rem, calc(100vw - 32px)); pointer-events: none;
+}
+.toast { background: var(--ink); color: var(--bg); border-radius: 14px; padding: 12px 16px; font-size: var(--step--1); box-shadow: 0 16px 30px -14px var(--shadow); }
+.card-demo {
+  display: grid; align-content: end; gap: 4px; padding: 18px; min-height: 9rem; border-radius: 20px; cursor: pointer;
+  background: linear-gradient(160deg, color-mix(in oklab, var(--apricot), white 35%), var(--apricot)); color: var(--on-apricot);
+  -webkit-tap-highlight-color: transparent; touch-action: manipulation; user-select: none; -webkit-user-select: none;
+}
+.card-demo b { font-size: var(--step-1); line-height: 1.3; }
+.card-demo span { font-size: var(--step--1); }
+
+/* usage */
+.usage { display: grid; gap: 22px; }
+
+footer { font-size: 0.75rem; color: var(--ink-soft); font-family: var(--f-mono); border-top: 1px solid var(--rule); padding-top: 16px; }
+
+@media (max-width: 460px) {
+  .flavor { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .tune-view { grid-template-columns: minmax(0, 1fr); }
+  .stat-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .controls { grid-template-columns: minmax(0, 1fr); }
+}
+</style>
+
+<div class="wrap">
+  <header class="hero">
+    <div class="hero-top">
+      <h1 class="wordmark" aria-label="jello"><span data-jello="bouncy" data-jello-dent="off" aria-hidden="true">j</span><span data-jello="bouncy" data-jello-dent="off" aria-hidden="true">e</span><span data-jello="bouncy" data-jello-dent="off" aria-hidden="true">l</span><span data-jello="bouncy" data-jello-dent="off" aria-hidden="true">l</span><span data-jello="bouncy" data-jello-dent="off" aria-hidden="true">o</span></h1>
+      <label class="switch" for="rm-preview"><input type="checkbox" id="rm-preview"> 동작 줄이기 미리보기</label>
+    </div>
+    <p class="lede">누른 자리가 말랑하게 들어가고, 놓으면 출렁이는 UI 피드백 라이브러리.</p>
+    <div class="notice" id="rm-notice" hidden>
+      <p>‘동작 줄이기’가 켜져 있어서 움직임 대신 투명도로 반응해요.</p>
+      <button class="ghost" id="rm-override" type="button">이 페이지에서만 움직임 보기</button>
+    </div>
+    <div class="stage">
+      <button class="jelly jelly-xl f-raspberry" data-jello="bouncy" data-jello-pivot="origin" type="button" aria-label="라즈베리 젤리 누르기"></button>
+    </div>
+    <p class="hint">누른 자리가 오목하게 들어가요. 꾹 누르고 있다가 놓아 보세요.</p>
+    <p class="meta"><span>v0.1.0</span><span>10 kB gzip</span><span>의존성 0</span><a href="https://github.com/im-ian/jello">GitHub</a></p>
+  </header>
+
+  <section aria-labelledby="h-presets">
+    <div class="head">
+      <p class="api">data-jello="firm | gentle | wobbly | bouncy"</p>
+      <h2 id="h-presets">네 가지 탄력</h2>
+      <p>%는 손을 뗀 뒤 반대쪽으로 튀어 오르는 정도예요.</p>
+    </div>
+    <div class="panel flavors">
+      <div class="flavor">
+        <button class="btn f-blueberry" data-jello="firm" type="button">결제하기</button>
+        <div><p class="name">firm</p><p class="desc">돈이 오가는 버튼처럼 진지한 곳. 단단하게 눌리고 거의 튀지 않아요.</p><p class="stats" data-preset-stats="firm"></p></div>
+      </div>
+      <div class="flavor">
+        <button class="btn f-apricot" data-jello="gentle" type="button">다음</button>
+        <div><p class="name">gentle</p><p class="desc">평범한 버튼. 한 번 부드럽게 늘어났다 멈춰요.</p><p class="stats" data-preset-stats="gentle"></p></div>
+      </div>
+      <div class="flavor">
+        <button class="btn f-raspberry" data-jello="wobbly" type="button">장바구니 담기</button>
+        <div><p class="name">wobbly<em>기본값</em></p><p class="desc">젤리답게 두 번 출렁여요.</p><p class="stats" data-preset-stats="wobbly"></p></div>
+      </div>
+      <div class="flavor">
+        <button class="btn f-lime" data-jello="bouncy" type="button">좋아요</button>
+        <div><p class="name">bouncy</p><p class="desc">좋아요나 스티커처럼 노는 버튼. 서너 번 흔들려요.</p><p class="stats" data-preset-stats="bouncy"></p></div>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-fx">
+    <div class="head">
+      <p class="api">jiggle() · shake() · pop() · hop()</p>
+      <h2 id="h-fx">한 번씩 쓰는 효과</h2>
+      <p>누르는 중에 써도 두 움직임이 합쳐져요.</p>
+    </div>
+    <div class="panel">
+      <div class="stage">
+        <button class="jelly f-lime" id="fx-jelly" data-jello data-jello-pivot="origin" type="button" aria-label="라임 젤리"></button>
+      </div>
+      <div class="chips">
+        <button class="chip" data-fx="jiggle" type="button"><code>jiggle</code>여기 봐요</button>
+        <button class="chip" data-fx="shake" type="button"><code>shake</code>틀렸어요</button>
+        <button class="chip" data-fx="pop" type="button"><code>pop</code>숫자 바뀜</button>
+        <button class="chip" data-fx="appear" type="button"><code>pop from 0</code>등장</button>
+        <button class="chip" data-fx="hop" type="button"><code>hop</code>담겼어요</button>
+      </div>
+      <div class="real">
+        <h3>실제 화면이라면</h3>
+        <form class="login" id="login" autocomplete="off">
+          <input id="pw-field" type="password" placeholder="비밀번호" aria-label="비밀번호" autocomplete="off">
+          <button class="btn f-blueberry" data-jello="firm" type="submit">로그인</button>
+          <p class="msg" id="pw-msg" aria-live="polite"></p>
+        </form>
+        <div class="shop">
+          <div class="cart" id="cart" aria-label="장바구니">
+            <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M3 5h4l3.2 14.2a2 2 0 0 0 2 1.6h11.6a2 2 0 0 0 2-1.5L28 10H8.6"/><path d="M13 26.5a1.5 1.5 0 1 0 0 .01M24 26.5a1.5 1.5 0 1 0 0 .01"/></svg>
+            <span class="badge" id="cart-badge" hidden>0</span>
+          </div>
+          <button class="btn f-raspberry" id="add-cart" data-jello type="button">장바구니 담기</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-comp">
+    <div class="head">
+      <p class="api">&lt;div data-jello&gt; 안의 모든 컨트롤</p>
+      <h2 id="h-comp">컴포넌트</h2>
+      <p>상자에 data-jello를 붙이면 안의 컨트롤이 종류에 맞게 반응해요. 네이티브 요소와 ARIA 상태를 그대로 써요.</p>
+    </div>
+    <div class="panel comp" data-jello>
+      <div class="group">
+        <h3>입력 <code>focus · input · invalid</code></h3>
+        <form class="fields" id="signup">
+          <label class="fld"><span>이메일</span><input id="su-email" type="email" required placeholder="you@example.com" autocomplete="off"></label>
+          <label class="fld"><span>한 줄 소개</span><textarea id="su-bio" rows="2" placeholder="글자를 칠 때마다 살짝 흔들려요"></textarea></label>
+          <label class="fld"><span>좋아하는 맛</span><select id="su-flavor"><option>라즈베리</option><option>라임</option><option>살구</option><option>블루베리</option></select></label>
+          <button class="btn f-raspberry" type="submit">가입하기</button>
+          <p class="note">이메일을 비우고 가입하기 → 흔들림. 탭 키로 이동 → 살짝 부풂.</p>
+        </form>
+      </div>
+      <div class="group">
+        <h3>선택 <code>change · aria-checked · aria-pressed</code></h3>
+        <div class="row">
+          <label class="opt"><input id="cb-1" type="checkbox" checked> 알림 받기</label>
+          <label class="opt"><input id="cb-2" type="checkbox"> 뉴스레터</label>
+        </div>
+        <div class="row" role="radiogroup" aria-label="크기">
+          <label class="opt"><input id="rd-1" type="radio" name="size" checked> 작게</label>
+          <label class="opt"><input id="rd-2" type="radio" name="size"> 보통</label>
+          <label class="opt"><input id="rd-3" type="radio" name="size"> 크게</label>
+        </div>
+        <div class="row">
+          <button class="switch-ui" id="sw-1" role="switch" aria-checked="false" type="button" aria-labelledby="sw-1-label"></button>
+          <span id="sw-1-label" class="sw-text">야간 배송<small>직접 만든 스위치 · aria-checked</small></span>
+        </div>
+        <div class="row chips-row" aria-label="식감">
+          <button class="chip" type="button" aria-pressed="true">말랑</button>
+          <button class="chip" type="button" aria-pressed="false">탱글</button>
+          <button class="chip" type="button" aria-pressed="false">쫀득</button>
+        </div>
+      </div>
+      <div class="group">
+        <h3>슬라이더 <code>input · 놓을 때</code></h3>
+        <input id="sweet" type="range" min="0" max="100" value="40" aria-label="당도">
+        <p class="note">빠르게 끌다가 놓으면 그 방향으로 밀려났다 돌아와요.</p>
+      </div>
+      <div class="group">
+        <h3>탭 <code>aria-selected</code></h3>
+        <div class="tabs" role="tablist" aria-label="젤리 정보">
+          <button class="tab" role="tab" id="tab-a" aria-selected="true" aria-controls="tp-a" type="button">맛</button>
+          <button class="tab" role="tab" id="tab-b" aria-selected="false" aria-controls="tp-b" tabindex="-1" type="button">식감</button>
+          <button class="tab" role="tab" id="tab-c" aria-selected="false" aria-controls="tp-c" tabindex="-1" type="button">칼로리</button>
+        </div>
+        <p class="tabpanel" role="tabpanel" id="tp-a" aria-labelledby="tab-a">라즈베리, 라임, 살구, 블루베리 네 가지예요.</p>
+        <p class="tabpanel" role="tabpanel" id="tp-b" aria-labelledby="tab-b" hidden>젤라틴 2%면 말랑, 4%면 탱글해요.</p>
+        <p class="tabpanel" role="tabpanel" id="tp-c" aria-labelledby="tab-c" hidden>한 컵에 약 70kcal예요.</p>
+      </div>
+      <div class="group">
+        <h3>아코디언 <code>details · aria-expanded</code></h3>
+        <div class="acc">
+          <details name="jelly-faq"><summary>젤리는 왜 흔들릴까요?</summary><p>젤라틴 그물 속에 물이 갇혀 있어서, 눌렸다 놓이면 탄성으로 돌아가며 몇 번 출렁여요. 스프링과 같은 원리예요.</p></details>
+          <details name="jelly-faq"><summary>냉장고에 오래 두면요?</summary><p>물이 빠져나와 단단해지고 덜 흔들려요. bounce를 낮춘 firm 프리셋과 비슷해요.</p></details>
+          <details name="jelly-faq"><summary>몇 번까지 출렁여요?</summary><p>bounce 0.65면 두 번 정도 눈에 보이게 출렁이고, 0.75면 서너 번이에요. 위의 직접 조절하기에서 바꿔 볼 수 있어요.</p></details>
+          <div class="acc-item">
+            <button class="acc-head" type="button" id="acc-btn" aria-expanded="false" aria-controls="acc-panel">직접 만든 아코디언 (button + aria-expanded)</button>
+            <div class="acc-panel" id="acc-panel" role="region" aria-labelledby="acc-btn" hidden><p>aria-expanded와 hidden만 바꾸면 aria-controls로 연결된 패널이 떨어지듯 열려요.</p></div>
+          </div>
+        </div>
+        <p class="note">위의 세 개는 name으로 묶여 한 번에 하나만 열려요.</p>
+      </div>
+      <div class="group">
+        <h3>겹쳐 뜨는 것 <code>popover · dialog · data-jello-enter</code></h3>
+        <div class="row">
+          <button class="chip" type="button" popovertarget="pop-menu">메뉴 열기</button>
+          <button class="chip" type="button" id="open-dialog">대화상자 열기</button>
+          <button class="chip" type="button" id="make-toast">토스트 띄우기</button>
+        </div>
+        <div class="menu" popover id="pop-menu">
+          <button type="button" popovertarget="pop-menu" popovertargetaction="hide">링크 복사</button>
+          <button type="button" popovertarget="pop-menu" popovertargetaction="hide">공유하기</button>
+          <button type="button" popovertarget="pop-menu" popovertargetaction="hide">신고하기</button>
+        </div>
+        <dialog class="dlg" id="dlg" aria-labelledby="dlg-title">
+          <h3 id="dlg-title">젤리를 비울까요?</h3>
+          <p>장바구니에 담긴 젤리 3개가 사라져요.</p>
+          <div class="actions">
+            <button class="ghost" type="button" id="dlg-cancel">취소</button>
+            <button class="btn f-raspberry" type="button" id="dlg-ok">비우기</button>
+          </div>
+        </dialog>
+      </div>
+      <div class="group">
+        <h3>카드 <code>누른 자리 중심</code></h3>
+        <article class="card-demo" id="card" data-jello="gentle" role="button" tabindex="0" aria-label="큰 카드">
+          <b>모서리를 눌러 보세요</b>
+          <span>누른 점을 기준으로 찌그러지고 그 자리가 들어가요.</span>
+        </article>
+        <div class="row">
+          <label class="opt"><input id="card-pivot" type="checkbox" checked> 누른 점 기준으로 찌그러짐</label>
+          <label class="opt"><input id="card-dent" type="checkbox" checked> 보조개</label>
+        </div>
+      </div>
+    </div>
+    <div class="toasts" id="toasts" aria-live="polite"></div>
+  </section>
+
+  <section aria-labelledby="h-tune">
+    <div class="head">
+      <p class="api">spring({ duration, bounce })</p>
+      <h2 id="h-tune">직접 조절하기</h2>
+      <p>duration은 체감 속도, bounce는 탄력이에요. 0이면 튀지 않고 음수면 더 끈적하게 멈춰요.</p>
+    </div>
+    <div class="panel">
+      <div class="controls">
+        <div class="control"><label for="t-duration">duration <output id="o-duration"></output></label><input id="t-duration" type="range" min="0.2" max="1.2" step="0.01" value="0.55"></div>
+        <div class="control"><label for="t-bounce">bounce <output id="o-bounce"></output></label><input id="t-bounce" type="range" min="-0.6" max="0.9" step="0.01" value="0.65"></div>
+        <div class="control"><label for="t-squash">찌그러짐 squash <output id="o-squash"></output></label><input id="t-squash" type="range" min="0" max="0.25" step="0.005" value="0.1"></div>
+        <div class="control"><label for="t-depth">눌림 depth <output id="o-depth"></output></label><input id="t-depth" type="range" min="0" max="0.15" step="0.005" value="0.05"></div>
+      </div>
+      <div class="tune-view">
+        <div class="stage"><button class="jelly jelly-sm f-apricot" id="tune-jelly" type="button" aria-label="살구 젤리, 조절한 값으로 반응"></button></div>
+        <svg class="curve" id="curve" viewBox="0 0 320 150" role="img" aria-label="놓았을 때의 스프링 곡선"></svg>
+      </div>
+      <div class="stat-row">
+        <div class="stat"><span>감쇠비 ζ</span><b id="s-zeta"></b></div>
+        <div class="stat"><span>고유진동수 ω₀</span><b id="s-omega"></b></div>
+        <div class="stat"><span>튀어 오름</span><b id="s-over"></b></div>
+        <div class="stat"><span>멈출 때까지</span><b id="s-settle"></b></div>
+      </div>
+      <div class="codebox">
+        <div class="codebox-top"><span>JS 없이 같은 곡선 쓰기 · springEasing()</span><button class="ghost" type="button" data-copy="css-out">복사</button></div>
+        <pre class="wrapcode"><code id="css-out"></code></pre>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-usage">
+    <div class="head">
+      <p class="api">auto() · jello() · jello.css</p>
+      <h2 id="h-usage">쓰는 법</h2>
+    </div>
+    <div class="usage">
+      <div class="codebox">
+        <div class="codebox-top"><span>설치</span><button class="ghost" type="button" data-copy="code-install">복사</button></div>
+<pre><code id="code-install">npm install github:im-ian/jello</code></pre>
+      </div>
+      <div class="codebox">
+        <div class="codebox-top"><span>빌드 없이</span><button class="ghost" type="button" data-copy="code-cdn">복사</button></div>
+<pre><code id="code-cdn">&lt;script type="module"&gt;
+  import { auto } from 'https://im-ian.github.io/jello/jello.js'
+  auto()
+&lt;/script&gt;</code></pre>
+      </div>
+      <div class="codebox">
+        <div class="codebox-top"><span>속성 하나로</span><button class="ghost" type="button" data-copy="code-auto">복사</button></div>
+<pre><code id="code-auto">&lt;button data-jello&gt;장바구니 담기&lt;/button&gt;
+&lt;button data-jello="bouncy"&gt;좋아요&lt;/button&gt;
+
+&lt;script type="module"&gt;
+  import { auto } from 'jello'
+  auto() <span class="cm">// 나중에 그려진 요소에도 적용</span>
+&lt;/script&gt;</code></pre>
+      </div>
+      <div class="codebox">
+        <div class="codebox-top"><span>폼·툴바 통째로</span><button class="ghost" type="button" data-copy="code-scope">복사</button></div>
+<pre><code id="code-scope">&lt;form data-jello&gt;           <span class="cm">&lt;!-- 안의 input·checkbox·select·버튼 전부 --&gt;</span>
+  &lt;input type="email" required&gt;
+  &lt;div data-jello="off"&gt;…&lt;/div&gt;   <span class="cm">&lt;!-- 여기만 빼기 --&gt;</span>
+&lt;/form&gt;
+
+&lt;button data-jello data-jello-pivot="origin"&gt;  <span class="cm">&lt;!-- CSS 기준점으로 --&gt;</span>
+&lt;button data-jello data-jello-dent="off"&gt;      <span class="cm">&lt;!-- 보조개 끄기 --&gt;</span>
+&lt;div class="toast" data-jello-enter&gt;          <span class="cm">&lt;!-- 들어올 때 튀어나오기 --&gt;</span></code></pre>
+      </div>
+      <div class="codebox">
+        <div class="codebox-top"><span>React · Vue · Svelte</span><button class="ghost" type="button" data-copy="code-react">복사</button></div>
+<pre><code id="code-react"><span class="cm">// 앱 시작할 때 한 번</span>
+import { auto } from 'jello'
+auto()
+
+<span class="cm">// 컴포넌트에서는 속성만</span>
+&lt;button data-jello="bouncy" onClick={like}&gt;좋아요&lt;/button&gt;</code></pre>
+      </div>
+      <div class="codebox">
+        <div class="codebox-top"><span>코드로</span><button class="ghost" type="button" data-copy="code-api">복사</button></div>
+<pre><code id="code-api">import { jello, shake, pop, hop } from 'jello'
+
+const buy = jello('#buy', { preset: 'firm', tilt: 0 })
+shake(passwordField)      <span class="cm">// 틀렸을 때</span>
+pop(badge)                <span class="cm">// 숫자가 바뀔 때</span>
+pop(toast, { from: 0 })   <span class="cm">// 나타날 때</span>
+hop(cartIcon)             <span class="cm">// 담겼을 때</span>
+buy.destroy()</code></pre>
+      </div>
+      <div class="codebox">
+        <div class="codebox-top"><span>JS 없이</span><button class="ghost" type="button" data-copy="code-css">복사</button></div>
+<pre><code id="code-css">&lt;link rel="stylesheet" href="https://im-ian.github.io/jello/jello.css"&gt;
+&lt;button class="jello jello--gentle"&gt;다음&lt;/button&gt;</code></pre>
+      </div>
+      <div class="codebox">
+        <div class="codebox-top"><span>나만의 효과</span><button class="ghost" type="button" data-copy="code-custom">복사</button></div>
+<pre><code id="code-custom">import { motionFor, spring, impulse } from 'jello'
+
+const s = spring({ duration: 0.6, bounce: 0.7 })
+<span class="cm">// 6°까지 기울었다 돌아오기</span>
+motionFor(el).update((c) =&gt; c.kick('tilt', impulse(s, 6), s))</code></pre>
+      </div>
+    </div>
+  </section>
+
+  <footer>jello 0.1.0 · <a href="https://github.com/im-ian/jello">github.com/im-ian/jello</a></footer>
+</div>
+
+<!-- @jello-bundle -->
+
+<script>
+(() => {
+  const J = window.Jello
+  const $ = (s) => document.querySelector(s)
+  const $$ = (s) => Array.from(document.querySelectorAll(s))
+  const root = document.documentElement
+
+  J.auto()
+
+  /* ---------------- reduced motion */
+  const osReduce = matchMedia('(prefers-reduced-motion: reduce)')
+  let allowMotion = false
+  const preview = $('#rm-preview')
+  function syncMotion() {
+    J.configure({ reducedMotion: preview.checked ? 'always' : allowMotion ? 'never' : 'user' })
+    $('#rm-notice').hidden = !(osReduce.matches && !allowMotion)
+    root.classList.toggle('allow-motion', allowMotion)
+    root.classList.toggle('rm-preview', preview.checked)
+  }
+  preview.addEventListener('change', syncMotion)
+  $('#rm-override').addEventListener('click', () => { allowMotion = true; syncMotion() })
+  if (osReduce.addEventListener) osReduce.addEventListener('change', syncMotion)
+  syncMotion()
+
+  /* ---------------- preset numbers, computed from the library itself */
+  const overshoot = (s) => (s.zeta >= 1 ? 0 : Math.exp((-s.zeta * Math.PI) / Math.sqrt(1 - s.zeta * s.zeta)))
+  for (const el of $$('[data-preset-stats]')) {
+    const p = J.presets[el.dataset.presetStats]
+    const s = J.spring(p.release)
+    el.textContent = `bounce ${p.release.bounce} · 튐 ${Math.round(overshoot(s) * 100)}% · 찌그러짐 ${Math.round(p.squash * 100)}%`
+  }
+
+  /* ---------------- effects */
+  const fxJelly = $('#fx-jelly')
+  for (const b of $$('[data-fx]')) {
+    b.addEventListener('click', () => {
+      const fx = b.dataset.fx
+      if (fx === 'appear') J.pop(fxJelly, { from: 0 })
+      else J[fx](fxJelly)
+    })
+  }
+  $('#login').addEventListener('submit', (e) => {
+    e.preventDefault()
+    J.shake($('#pw-field'))
+    $('#pw-msg').textContent = '비밀번호가 달라요. 데모라서 늘 틀려요.'
+  })
+  let count = 0
+  $('#add-cart').addEventListener('click', () => {
+    const badge = $('#cart-badge')
+    count += 1
+    badge.textContent = String(count)
+    if (badge.hidden) { badge.hidden = false; J.pop(badge, { from: 0 }) } else J.pop(badge, { strength: 1.4 })
+    J.hop($('#cart'))
+  })
+
+  /* ---------------- components: this is the app's job; jello only reacts to the states */
+  const thumb = J.springEasing({ duration: 0.45, bounce: 0.45 })
+  root.style.setProperty('--thumb-ease', thumb.easing)
+  root.style.setProperty('--thumb-dur', `${thumb.duration}ms`)
+  for (const sw of $$('.switch-ui')) {
+    sw.addEventListener('click', () => sw.setAttribute('aria-checked', String(sw.getAttribute('aria-checked') !== 'true')))
+  }
+  for (const chip of $$('.chips-row .chip')) {
+    chip.addEventListener('click', () => chip.setAttribute('aria-pressed', String(chip.getAttribute('aria-pressed') !== 'true')))
+  }
+  const tabs = $$('[role="tab"]')
+  const selectTab = (tab, focus) => {
+    for (const t of tabs) {
+      const on = t === tab
+      t.setAttribute('aria-selected', String(on))
+      t.tabIndex = on ? 0 : -1
+      document.getElementById(t.getAttribute('aria-controls')).hidden = !on
+    }
+    if (focus) tab.focus()
+  }
+  tabs.forEach((t, i) => {
+    t.addEventListener('click', () => selectTab(t))
+    t.addEventListener('keydown', (e) => {
+      const d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0
+      if (!d) return
+      e.preventDefault()
+      selectTab(tabs[(i + d + tabs.length) % tabs.length], true)
+    })
+  })
+  const accBtn = $('#acc-btn')
+  accBtn.addEventListener('click', () => {
+    const open = accBtn.getAttribute('aria-expanded') !== 'true'
+    $('#acc-panel').hidden = !open
+    accBtn.setAttribute('aria-expanded', String(open))
+  })
+  const dlg = $('#dlg')
+  $('#open-dialog').addEventListener('click', () => dlg.showModal())
+  $('#dlg-cancel').addEventListener('click', () => dlg.close())
+  $('#dlg-ok').addEventListener('click', () => { dlg.close(); toast('장바구니를 비웠어요') })
+  function toast(text) {
+    const t = document.createElement('div')
+    t.className = 'toast'
+    t.setAttribute('data-jello-enter', '')
+    t.setAttribute('role', 'status')
+    t.textContent = text
+    $('#toasts').append(t)
+    setTimeout(() => {
+      const a = t.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 220, fill: 'forwards' })
+      a.onfinish = () => t.remove()
+    }, 2400)
+  }
+  $('#make-toast').addEventListener('click', () => toast('젤리를 장바구니에 담았어요'))
+  $('#signup').addEventListener('submit', (e) => { e.preventDefault(); toast('가입했어요. 데모라서 아무것도 보내지 않았어요.') })
+  $('#card-pivot').addEventListener('change', (e) => $('#card').setAttribute('data-jello-pivot', e.target.checked ? 'pointer' : 'origin'))
+  $('#card-dent').addEventListener('change', (e) => $('#card').setAttribute('data-jello-dent', e.target.checked ? 'on' : 'off'))
+
+  /* ---------------- tuning */
+  const t = { duration: $('#t-duration'), bounce: $('#t-bounce'), squash: $('#t-squash'), depth: $('#t-depth') }
+  const curve = $('#curve')
+  const NS = 'http://www.w3.org/2000/svg'
+  let tuneHandle = null
+  const svgEl = (name, attrs, text) => {
+    const el = document.createElementNS(NS, name)
+    for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v)
+    if (text != null) el.textContent = text
+    return el
+  }
+  function drawCurve(s, T) {
+    const W = 320, H = 150, L = 30, R = 12, TOP = 14, B = 22
+    const N = 180
+    const pts = []
+    for (let i = 0; i <= N; i++) { const tt = (T * i) / N; pts.push([tt, 1 + J.solve(s, -1, 0, tt)[0]]) }
+    const maxP = Math.max(1.2, ...pts.map((p) => p[1]))
+    const minP = Math.min(0, ...pts.map((p) => p[1]))
+    const x = (v) => L + (v / T) * (W - L - R)
+    const y = (p) => TOP + ((maxP - p) / (maxP - minP)) * (H - TOP - B)
+    const line = pts.map((p, i) => `${i ? 'L' : 'M'}${x(p[0]).toFixed(1)} ${y(p[1]).toFixed(1)}`).join('')
+    curve.replaceChildren(
+      svgEl('line', { x1: L, x2: W - R, y1: y(0), y2: y(0), stroke: 'var(--rule)', 'stroke-width': 1 }),
+      svgEl('line', { x1: L, x2: W - R, y1: y(1), y2: y(1), stroke: 'var(--ink-soft)', 'stroke-width': 1, 'stroke-dasharray': '3 4', opacity: 0.6 }),
+      svgEl('path', { d: `${line}L${x(T)} ${y(minP)}L${x(0)} ${y(minP)}Z`, fill: 'var(--accent)', opacity: 0.1 }),
+      svgEl('path', { d: line, fill: 'none', stroke: 'var(--accent)', 'stroke-width': 2.2, 'stroke-linejoin': 'round' }),
+      svgEl('text', { x: L - 6, y: y(1) + 3, 'text-anchor': 'end' }, '1'),
+      svgEl('text', { x: L - 6, y: y(0) + 3, 'text-anchor': 'end' }, '0'),
+      svgEl('text', { x: L, y: H - 6 }, '0ms'),
+      svgEl('text', { x: W - R, y: H - 6, 'text-anchor': 'end' }, `${Math.round(T * 1000)}ms`),
+    )
+    const peak = pts.reduce((a, b) => (b[1] > a[1] ? b : a))
+    if (peak[1] > 1.003) {
+      curve.append(
+        svgEl('circle', { cx: x(peak[0]), cy: y(peak[1]), r: 3.5, fill: 'var(--accent)' }),
+        svgEl('text', { x: x(peak[0]) + 7, y: y(peak[1]) + 3 }, `+${Math.round((peak[1] - 1) * 100)}%`),
+      )
+    }
+  }
+  function onTune() {
+    const d = +t.duration.value, b = +t.bounce.value, q = +t.squash.value, dp = +t.depth.value
+    $('#o-duration').textContent = `${d.toFixed(2)} s`
+    $('#o-bounce').textContent = b.toFixed(2)
+    $('#o-squash').textContent = `${Math.round(q * 100)}%`
+    $('#o-depth').textContent = `${Math.round(dp * 100)}%`
+    if (tuneHandle) tuneHandle.destroy()
+    tuneHandle = J.jello($('#tune-jelly'), { squash: q, depth: dp, tilt: 3, pivot: 'origin', release: { duration: d, bounce: b } })
+    const s = J.spring({ duration: d, bounce: b })
+    const T = J.settleTime(s, -1, 0, 1e-3, 1e-2, 5)
+    drawCurve(s, T)
+    $('#s-zeta').textContent = s.zeta.toFixed(2)
+    $('#s-omega').textContent = s.omega.toFixed(1)
+    $('#s-over').textContent = `${Math.round(overshoot(s) * 100)}%`
+    $('#s-settle').textContent = `${Math.round(T * 1000)}ms`
+    const e = J.springEasing({ duration: d, bounce: b })
+    $('#css-out').textContent = `transition: scale ${e.duration}ms ${e.easing};`
+  }
+  for (const input of Object.values(t)) input.addEventListener('input', onTune)
+  onTune()
+
+  /* ---------------- copy buttons */
+  for (const b of $$('[data-copy]')) {
+    b.addEventListener('click', () => {
+      const code = document.getElementById(b.dataset.copy)
+      const done = () => { b.textContent = '복사됨'; setTimeout(() => { b.textContent = '복사' }, 1400) }
+      const select = () => {
+        const r = document.createRange(); r.selectNodeContents(code)
+        const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r)
+        b.textContent = '선택됨'; setTimeout(() => { b.textContent = '복사' }, 1400)
+      }
+      try { navigator.clipboard.writeText(code.textContent).then(done, select) } catch { select() }
+    })
+  }
+
+})()
+</script>
