@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/logo.png" alt="jello" width="320">
+</p>
+
 # jello
 
 누른 자리가 말랑하게 들어가고, 놓으면 출렁이는 UI 피드백 라이브러리.
