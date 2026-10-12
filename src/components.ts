@@ -158,50 +158,65 @@ const GLIDE = /* @__PURE__ */ spring({ duration: 0.45, bounce: 0.35 })
 const STRETCH = /* @__PURE__ */ spring({ duration: 0.4, bounce: 0.6 })
 
 /** The indicator the app put in this tab's tablist, if any. jello never makes one. */
-function indicatorOf(tab: Element): HTMLElement | null {
+function indicatorOf(tab: Element): { ind: HTMLElement; vertical: boolean } | null {
   const list = tab.getAttribute('role') === 'tab' ? tab.closest('[role="tablist"]') : null
   const ind = list?.querySelector('[data-jello-indicator]')
-  return ind instanceof HTMLElement ? ind : null
+  if (!(ind instanceof HTMLElement)) return null
+  return { ind, vertical: list!.getAttribute('aria-orientation') === 'vertical' }
 }
 
 /**
  * Slide the tablist's indicator onto `tab` and squash it on arrival.
  * `snap` puts it there with no motion (bind time, reduced motion).
  *
- * Measured with offsetLeft/offsetWidth: those are layout, so the scale and
- * translate jello writes don't change them and every move re-measures from the
- * same ground truth. A rect would feed the last transform into the next target
- * and drift.
+ * Follows the tablist's aria-orientation: along x by default, along y for
+ * "vertical".
+ *
+ * Measured with offsetLeft/offsetWidth (offsetTop/offsetHeight when vertical):
+ * those are layout, so the scale and translate jello writes don't change them
+ * and every move re-measures from the same ground truth. A rect would feed the
+ * last transform into the next target and drift.
  *
  * There is no scaleX channel on purpose — squash keeps the area — but grow and
  * squash together span every (sx, sy): sx = (1+grow)/(1+squash), sy = (1+grow)(1+squash).
- * So √W in both widens by W and leaves the height alone. ours() clamps squash
- * at −0.8, which caps W near 25×; no tablist is that lopsided.
+ * Both solve from one √R, where R is the ratio along the track:
+ *
+ *   horizontal  sx = R, sy = 1   grow = √R − 1, squash = 1/√R − 1
+ *   vertical    sy = R, sx = 1   grow = √R − 1, squash =  √R − 1
+ *
+ * ours() clamps squash at −0.8, so R tops out near 25× across and bottoms out
+ * near 1/25 down. No tablist is that lopsided.
  *
  * ponytail: measured at bind and on each selection, so a webfont landing later
  * leaves it a px or two off until the next selection. ResizeObserver on the
  * tablist is the upgrade.
- * ponytail: horizontal tablists only. aria-orientation="vertical" would be the
- * same pair on the y axis (grow = squash = √H − 1). Not built.
  */
 export function moveIndicator(tab: Element, snap = prefersReducedMotion()) {
-  const ind = indicatorOf(tab)
-  if (!ind || !(tab instanceof HTMLElement)) return
-  if (!ind.offsetWidth || ind.offsetParent !== tab.offsetParent) return // not laid out, or not a shared frame
-  const sq = Math.sqrt(tab.offsetWidth / ind.offsetWidth)
-  const x = tab.offsetLeft + tab.offsetWidth / 2 - (ind.offsetLeft + ind.offsetWidth / 2)
+  const found = indicatorOf(tab)
+  if (!found || !(tab instanceof HTMLElement)) return
+  const { ind, vertical } = found
+  if (ind.offsetParent !== tab.offsetParent) return // not a shared frame
+  const own = vertical ? ind.offsetHeight : ind.offsetWidth
+  if (!own) return // not laid out
+  const axis = vertical ? 'y' : 'x'
+  const sq = Math.sqrt((vertical ? tab.offsetHeight : tab.offsetWidth) / own)
+  const squash = (vertical ? sq : 1 / sq) - 1
+  const d = vertical
+    ? tab.offsetTop + tab.offsetHeight / 2 - (ind.offsetTop + ind.offsetHeight / 2)
+    : tab.offsetLeft + tab.offsetWidth / 2 - (ind.offsetLeft + ind.offsetWidth / 2)
   motionFor(ind).update((c) => {
-    const travel = Math.abs(x - c.value('x'))
-    c.to('x', x, GLIDE)
+    const travel = Math.abs(d - c.value(axis))
+    c.to(axis, d, GLIDE)
     c.to('grow', sq - 1, GLIDE)
-    c.to('squash', 1 / sq - 1, GLIDE)
+    c.to('squash', squash, GLIDE)
     if (snap) {
-      c.jump('x', x)
+      c.jump(axis, d)
       c.jump('grow', sq - 1)
-      c.jump('squash', 1 / sq - 1)
+      c.jump('squash', squash)
     } else {
-      // stretched along the way, the further it goes the more
-      c.kick('squash', -impulse(STRETCH, Math.min(0.1, travel * 4e-4)), STRETCH)
+      // stretched along the way, the further it goes the more: wider when it
+      // travels sideways, taller when it travels down
+      c.kick('squash', (vertical ? 1 : -1) * impulse(STRETCH, Math.min(0.1, travel * 4e-4)), STRETCH)
     }
   })
 }

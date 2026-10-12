@@ -711,24 +711,25 @@ describe('stepper', () => {
 
 describe('tab indicator', () => {
   /**
-   * A tablist whose layout we fake: tabs laid out left to right, and an
-   * indicator CSS left sitting on the first one.
+   * A tablist whose layout we fake: tabs laid end to end along the track, and
+   * an indicator CSS left sitting on the first one.
    */
-  function tablist(widths = [60, 80, 100]) {
+  function tablist(sizes = [60, 80, 100], vertical = false) {
     const list = container()
     list.setAttribute('role', 'tablist')
-    const lay = (el: Element, left: number, width: number) => {
-      Object.defineProperty(el, 'offsetLeft', { value: left, configurable: true })
-      Object.defineProperty(el, 'offsetWidth', { value: width, configurable: true })
+    if (vertical) list.setAttribute('aria-orientation', 'vertical')
+    const lay = (el: Element, offset: number, size: number) => {
+      Object.defineProperty(el, vertical ? 'offsetTop' : 'offsetLeft', { value: offset, configurable: true })
+      Object.defineProperty(el, vertical ? 'offsetHeight' : 'offsetWidth', { value: size, configurable: true })
       Object.defineProperty(el, 'offsetParent', { value: list, configurable: true })
     }
     const { el: ind } = fakeEl('span', { 'data-jello-indicator': '' }, list)
-    lay(ind, 0, widths[0]!)
-    let left = 0
-    const tabs = widths.map((w, i) => {
+    lay(ind, 0, sizes[0]!)
+    let at = 0
+    const tabs = sizes.map((s, i) => {
       const { el } = fakeEl('button', { role: 'tab', 'aria-selected': String(i === 0) }, list)
-      lay(el, left, w)
-      left += w
+      lay(el, at, s)
+      at += s
       return el
     })
     return { ind, tabs }
@@ -758,6 +759,22 @@ describe('tab indicator', () => {
     expect(end.sy).toBeCloseTo(1, 2)
     expect(stateOf(a.keyframes[0]!).tx).toBeCloseTo(0, 1) // starts where it was
     expect(Math.min(...a.keyframes.map((k) => stateOf(k).sy))).toBeLessThan(0.99) // stretched on the way
+    stop()
+  })
+
+  it('follows aria-orientation="vertical" down the y axis, taking the height instead', async () => {
+    const { ind, tabs } = tablist([60, 80, 100], true)
+    const stop = auto()
+    tabs[0]!.setAttribute('aria-selected', 'false')
+    tabs[2]!.setAttribute('aria-selected', 'true')
+    await tick()
+    const a = animsOf(ind).at(-1)!
+    const end = stateOf(a.keyframes.at(-1)!)
+    expect(end.ty).toBeCloseTo(160, 1) // (140 + 100/2) − (0 + 60/2)
+    expect(end.sy).toBeCloseTo(100 / 60, 2) // the tab's height
+    expect(end.sx).toBeCloseTo(1, 2) // width untouched, the mirror of the horizontal case
+    expect(end.tx).toBeCloseTo(0, 1) // and it never moved sideways
+    expect(Math.min(...a.keyframes.map((k) => stateOf(k).sx))).toBeLessThan(0.99) // narrowed on the way down
     stop()
   })
 

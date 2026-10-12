@@ -326,6 +326,11 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
   background: var(--plate); border-radius: 10px; box-shadow: 0 1px 0 var(--rule), 0 4px 10px -6px var(--shadow);
 }
 .tabpanel { font-size: var(--step--1); color: var(--ink-soft); }
+/* vertical tablist: same plate, standing on its side */
+.vtabs { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 14px; align-items: start; }
+.tabs-v { flex-direction: column; overflow-x: visible; }
+.tabs-v .tab { text-align: left; }
+.tabs-v .tab-ind { inset-block: auto; inset-inline: 4px; top: 4px; inline-size: auto; block-size: 2.4rem; }
 .acc { display: grid; gap: 8px; }
 .acc details { border: 1.5px solid var(--rule); border-radius: 14px; background: var(--plate); }
 .acc summary {
@@ -671,6 +676,23 @@ footer { font-size: 0.75rem; color: var(--ink-soft); font-family: var(--f-mono);
         <p class="note">고른 탭 뒤의 판이 미끄러져 따라와요. 앱은 aria-selected만 바꾸고, 판에는 data-jello-indicator 하나만 붙였어요.</p>
       </div>
       <div class="group gcard" data-cat="nav">
+        <h3>세로 탭 <code>aria-orientation="vertical"</code></h3>
+        <div class="vtabs">
+          <div class="tabs tabs-v" role="tablist" aria-orientation="vertical" aria-label="보관법">
+            <span class="tab-ind" data-jello-indicator aria-hidden="true"></span>
+            <button class="tab" role="tab" id="vtab-a" aria-selected="true" aria-controls="vtp-a" type="button">냉장</button>
+            <button class="tab" role="tab" id="vtab-b" aria-selected="false" aria-controls="vtp-b" tabindex="-1" type="button">냉동</button>
+            <button class="tab" role="tab" id="vtab-c" aria-selected="false" aria-controls="vtp-c" tabindex="-1" type="button">실온</button>
+          </div>
+          <div>
+            <p class="tabpanel" role="tabpanel" id="vtp-a" aria-labelledby="vtab-a">4℃에서 사흘쯤 가요. 물이 조금 빠지면서 탱글해져요.</p>
+            <p class="tabpanel" role="tabpanel" id="vtp-b" aria-labelledby="vtab-b" hidden>얼리면 젤라틴 그물이 끊어져서, 녹은 뒤엔 흐물흐물해져요.</p>
+            <p class="tabpanel" role="tabpanel" id="vtp-c" aria-labelledby="vtab-c" hidden>28℃가 넘으면 녹아요. 젤라틴은 체온 근처에서 풀려요.</p>
+          </div>
+        </div>
+        <p class="note">위아래 화살표로 옮겨요. 가로일 때는 넓이를, 세로일 때는 높이를 탭에 맞춰요.</p>
+      </div>
+      <div class="group gcard" data-cat="nav">
         <h3>아코디언 <code>&lt;details&gt;</code></h3>
         <div class="acc">
           <details name="jelly-faq"><summary>젤리는 왜 흔들릴까요?</summary><p>젤라틴 그물 속에 물이 갇혀 있어서, 눌렸다 놓이면 탄성으로 돌아가며 몇 번 출렁여요. 스프링과 같은 원리예요.</p></details>
@@ -968,25 +990,29 @@ motionFor(el).update((c) =&gt; c.kick('tilt', impulse(s, 6), s))</code></pre>
   for (const chip of $$('.chips-row .chip')) {
     chip.addEventListener('click', () => chip.setAttribute('aria-pressed', String(chip.getAttribute('aria-pressed') !== 'true')))
   }
-  const tabs = $$('[role="tab"]')
-  const selectTab = (tab, focus) => {
-    for (const t of tabs) {
-      const on = t === tab
-      t.setAttribute('aria-selected', String(on))
-      t.tabIndex = on ? 0 : -1
-      document.getElementById(t.getAttribute('aria-controls')).hidden = !on
+  for (const list of $$('[role="tablist"]')) {
+    // per tablist: a page-wide [role=tab] sweep would let one list hide another's panels
+    const tabs = Array.from(list.querySelectorAll('[role="tab"]'))
+    const vertical = list.getAttribute('aria-orientation') === 'vertical'
+    const selectTab = (tab, focus) => {
+      for (const t of tabs) {
+        const on = t === tab
+        t.setAttribute('aria-selected', String(on))
+        t.tabIndex = on ? 0 : -1
+        document.getElementById(t.getAttribute('aria-controls')).hidden = !on
+      }
+      if (focus) tab.focus()
     }
-    if (focus) tab.focus()
-  }
-  tabs.forEach((t, i) => {
-    t.addEventListener('click', () => selectTab(t))
-    t.addEventListener('keydown', (e) => {
-      const d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0
-      if (!d) return
-      e.preventDefault()
-      selectTab(tabs[(i + d + tabs.length) % tabs.length], true)
+    tabs.forEach((t, i) => {
+      t.addEventListener('click', () => selectTab(t))
+      t.addEventListener('keydown', (e) => {
+        const d = e.key === (vertical ? 'ArrowDown' : 'ArrowRight') ? 1 : e.key === (vertical ? 'ArrowUp' : 'ArrowLeft') ? -1 : 0
+        if (!d) return
+        e.preventDefault()
+        selectTab(tabs[(i + d + tabs.length) % tabs.length], true)
+      })
     })
-  })
+  }
   const accBtn = $('#acc-btn')
   accBtn.addEventListener('click', () => {
     const open = accBtn.getAttribute('aria-expanded') !== 'true'

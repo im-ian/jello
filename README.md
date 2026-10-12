@@ -51,6 +51,8 @@ React·Vue·Svelte도 같습니다. `auto()`를 한 번 부르고 컴포넌트�
 | `data-jello-enter` | 숫자(선택, 기본 0.6) | DOM에 추가될 때 이 크기에서 튀어나옴 |
 | `data-jello-indicator` | 없음 | `[role=tablist]` 안의 탭 인디케이터. 선택된 탭으로 미끄러짐 |
 
+`data-jello-indicator`는 tablist의 `aria-orientation`을 따릅니다. 가로면 탭의 넓이에, `vertical`이면 높이에 맞춰요.
+
 컨트롤이 들어 있는 요소에 붙이면 그 요소는 눌리지 않고 안의 컨트롤만 반응합니다. 컨트롤이 없는 요소(카드 등)는 그 자체가 눌립니다.
 
 ## 컴포넌트
@@ -61,7 +63,7 @@ React·Vue·Svelte도 같습니다. `auto()`를 한 번 부르고 컴포넌트�
 | 입력 | `input`, `textarea`, `select`, `contenteditable`, `[role=textbox\|combobox]` | 키보드 포커스 시 부풂, 입력할 때 흔들림, `invalid` 시 흔들기 |
 | 스테퍼 | `input[type=number]`, `[role=spinbutton]` | 값이 오르면 위로 늘어나고, 내리면 아래로 눌림 |
 | 토글 | `checkbox`, `radio`, `[role=switch\|checkbox\|radio]` | 체크 상태가 바뀌면 통통 |
-| 탭 | `[role=tablist]` + `[data-jello-indicator]` | 선택된 탭으로 인디케이터가 미끄러지고 도착할 때 찌그러짐 |
+| 탭 | `[role=tablist]` + `[data-jello-indicator]` | 선택된 탭으로 인디케이터가 미끄러지고 도착할 때 찌그러짐. 가로·세로 모두 |
 | 슬라이더 | `input[type=range]`, `[role=slider]` | 손을 떼면 끌던 방향으로 밀렸다 돌아옴 |
 | 아코디언 | `<details>`, `[aria-expanded][aria-controls]` | 제목은 고정, 내용 높이가 늘었다 탄성으로 수축 |
 | 겹쳐 뜨는 요소 | `<dialog>`, `[popover]`, `[data-jello-enter]` | 열리거나 추가될 때 튀어나옴 |
