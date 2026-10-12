@@ -55,6 +55,7 @@ React·Vue·Svelte도 같습니다. `auto()`를 한 번 부르고 컴포넌트�
 | `data-jello-dent` | `off` | 누른 자리 보조개 끄기 |
 | `data-jello-enter` | 숫자(선택, 기본 0.6) | DOM에 추가될 때 이 크기에서 튀어나옴 |
 | `data-jello-indicator` | 없음 | `[role=tablist]` 안의 탭 인디케이터. 선택된 탭으로 미끄러짐 |
+| `data-jello-height` | 없음 | 자식이 늘거나 줄면 높이가 아코디언처럼 늘었다 수축 |
 
 `data-jello-indicator`는 tablist의 `aria-orientation`을 따릅니다. 가로면 탭의 넓이에, `vertical`이면 높이에 맞춰요.
 
@@ -64,7 +65,8 @@ React·Vue·Svelte도 같습니다. `auto()`를 한 번 부르고 컴포넌트�
 
 | 종류 | 요소 | 동작 |
 | --- | --- | --- |
-| 누르기 | `button`, `a[href]`, `[role=button\|tab\|menuitem\|option]`, 카드 | 누른 자리 기준으로 찌그러졌다 출렁, 보조개 |
+| 누르기 | `button`, `a[href]`, `[role=button\|tab]`, 카드 | 누른 자리 기준으로 찌그러졌다 출렁, 보조개 |
+| 행 | `[role=option\|menuitem\|treeitem]` | 같은 누르기지만 약하게. 리스트 안의 납작한 행이라 기울기·보조개 없음 |
 | 입력 | `input`, `textarea`, `select`, `contenteditable`, `[role=textbox\|combobox]` | 키보드 포커스 시 부풂, 입력할 때 흔들림, `invalid` 시 흔들기 |
 | 스테퍼 | `input[type=number]`, `[role=spinbutton]` | 값이 오르면 위로 늘어나고, 내리면 아래로 눌림 |
 | 토글 | `checkbox`, `radio`, `[role=switch\|checkbox\|radio]` | 체크 상태가 바뀌면 통통 |

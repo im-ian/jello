@@ -13,7 +13,7 @@ import {
   type Kind,
 } from './components'
 import { pop } from './effects'
-import { toggleDetails } from './fold'
+import { heightChanged, seedHeights, toggleDetails } from './fold'
 import { prefersReducedMotion } from './config'
 import { slideMoved, slideSeed, slideStart } from './slide'
 import type { JelloElement } from './motion'
@@ -45,11 +45,15 @@ export function resolveFeel(o: JelloOptions = {}): Feel {
 
 /**
  * Fields get a much gentler press and no dimple (they can't hold one anyway).
+ * List rows take the same softening rather than a feel of their own: a row is
+ * as wide as the list it sits in, so the button squash (10%) pushes it out
+ * sideways, and tilt lifts a corner off an otherwise flat list. The caps leave
+ * the press alive — a few percent shorter, still bouncing back.
  * Accordion titles don't move at all — only the dimple shows where you pressed.
  */
 const kindFeels = { field: new WeakMap<Feel, Feel>(), disclosure: new WeakMap<Feel, Feel>() }
 function feelForKind(f: Feel, kind: Kind): Feel {
-  const soft = kind === 'step' ? 'field' : kind // a stepper is a field with buttons
+  const soft = kind === 'step' || kind === 'row' ? 'field' : kind // a stepper is a field with buttons
   if (soft !== 'field' && soft !== 'disclosure') return f
   const cache = kindFeels[soft]
   let g = cache.get(f)
@@ -104,17 +108,29 @@ function enabled(scope: Scope, el: Element): boolean {
   return !!host && !isOff(host)
 }
 
+const selectedTab = (list: Element) => list.querySelector('[role="tab"][aria-selected="true"]')
+
 /**
  * Tab indicators start wherever CSS left them: put each one on its selected
  * tab, with no motion. Run at bind time and for tablists rendered later, so
  * the app never has to hardcode a starting offset.
+ *
+ * `watch` then keeps it there. A tablist is measured when it is seen, but the
+ * tabs move afterwards: a webfont lands, the panel it sits in is revealed from
+ * display:none (it measured 0 and was skipped), the page reflows. Moving the
+ * indicator is a transform and transforms don't affect layout, so re-measuring
+ * on resize can't feed itself.
  */
-function snapIndicators(scope: Scope, root: Document | Element) {
+function snapIndicators(scope: Scope, root: Document | Element, watch?: ResizeObserver | null) {
   const inds = Array.from(root.querySelectorAll('[data-jello-indicator]'))
   if (root instanceof Element && root.matches('[data-jello-indicator]')) inds.push(root)
   for (const ind of inds) {
-    const tab = ind.closest('[role="tablist"]')?.querySelector('[role="tab"][aria-selected="true"]')
-    if (tab && enabled(scope, tab)) moveIndicator(tab, true)
+    const list = ind.closest('[role="tablist"]')
+    if (!list) continue
+    const tab = selectedTab(list)
+    if (!tab || !enabled(scope, tab)) continue
+    moveIndicator(tab, true)
+    watch?.observe(list)
   }
 }
 
@@ -141,7 +157,7 @@ function bind(scope: Scope, enter: boolean): () => void {
       case 'keydown':
       case 'keyup':
       case 'focusout':
-        if (kind === 'press' || kind === 'disclosure') onKey(el, feel, e as KeyboardEvent)
+        if (kind === 'press' || kind === 'row' || kind === 'disclosure') onKey(el, feel, e as KeyboardEvent)
         break
       case 'focusin':
         if ((kind === 'field' || kind === 'step') && e.target === el && !pressedRecently(el)) focused(el)
@@ -187,13 +203,17 @@ function bind(scope: Scope, enter: boolean): () => void {
               if (value !== r.oldValue && enabled(scope, el)) {
                 attributeChanged(el as JelloElement, r.attributeName!, value, r.oldValue)
               }
-            } else if (enter) {
+            } else {
+              heightChanged(r.target) // only a [data-jello-height] container reacts
               r.addedNodes.forEach((n) => {
                 if (!(n instanceof Element)) return
-                const found = n.matches('[data-jello-enter]') ? [n] : []
-                found.push(...Array.from(n.querySelectorAll('[data-jello-enter]')))
-                for (const el of found) entered(el as JelloElement, Number(el.getAttribute('data-jello-enter')) || 0.6)
-                snapIndicators(scope, n)
+                if (enter) {
+                  const found = n.matches('[data-jello-enter]') ? [n] : []
+                  found.push(...Array.from(n.querySelectorAll('[data-jello-enter]')))
+                  for (const el of found) entered(el as JelloElement, Number(el.getAttribute('data-jello-enter')) || 0.6)
+                }
+                snapIndicators(scope, n, watch)
+                seedHeights(n)
               })
             }
           }
@@ -204,14 +224,27 @@ function bind(scope: Scope, enter: boolean): () => void {
     attributes: true,
     attributeOldValue: true,
     attributeFilter: WATCHED,
-    childList: enter,
+    // Always: `enter` only governs the [data-jello-enter] pop, while
+    // [data-jello-height] is its own opt-in and works on any scope.
+    childList: true,
   })
-  snapIndicators(scope, scope.root)
+  const watch =
+    typeof ResizeObserver === 'function'
+      ? new ResizeObserver((entries) => {
+          for (const e of entries) {
+            const tab = selectedTab(e.target)
+            if (tab && enabled(scope, tab)) moveIndicator(tab, true)
+          }
+        })
+      : null
+  snapIndicators(scope, scope.root, watch)
+  seedHeights(scope.root)
 
   return () => {
     for (const type of LISTEN) scope.root.removeEventListener(type, handle, true)
     scope.root.removeEventListener('click', click)
     mo?.disconnect()
+    watch?.disconnect()
   }
 }
 

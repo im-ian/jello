@@ -470,6 +470,31 @@ describe('components', () => {
     stop()
   })
 
+  it('list rows get a press meant for a row, buttons keep theirs', async () => {
+    const stop = auto()
+    const box = container()
+    box.setAttribute('role', 'listbox')
+    const { el: row, anims: rowAnims } = fakeEl('div', { role: 'option', 'aria-selected': 'false' }, box)
+    const { el: btn, anims: btnAnims } = fakeEl('button', {}, box)
+    const peakSx = (a: FakeAnim) => Math.max(...a.keyframes.map((k) => scaleOf(k)[0]))
+
+    down(row, 71, 170, 25) // 85% along a 200px-wide row
+    up(71)
+    row.setAttribute('aria-selected', 'true') // and the app selects it
+    await tick()
+    expect(rowAnims.every((a) => a.keyframes.every((k) => k.rotate === undefined))).toBe(true) // no tilt
+    expect(row.querySelector('[data-jello-dent]')).toBeNull() // no dimple
+    expect(Math.max(...rowAnims.map(peakSx))).toBeLessThan(1.03) // never pushes out of the list
+    expect(scaleOf(rowAnims[0]!.keyframes.at(-1)!)[1]).toBeCloseTo(0.98 * 0.975, 3) // still reacts
+
+    down(btn, 72, 170, 25)
+    expect(rotateOf(btnAnims[0]!.keyframes.at(-1)!)).toBeCloseTo(2.1, 2) // wobbly tilt, unchanged
+    expect(scaleOf(btnAnims[0]!.keyframes.at(-1)!)[0]).toBeCloseTo(0.95 / 0.9, 3)
+    expect(btn.querySelector('[data-jello-dent]')).not.toBeNull()
+    up(72)
+    stop()
+  })
+
   it('range sliders are not squashed while dragging', () => {
     const stop = auto()
     const f = form()
@@ -959,6 +984,61 @@ describe('accordion', () => {
     const stop = auto()
     const { s } = details(container())
     expect(click(s)).toBe(true)
+    stop()
+  })
+
+  /** <ul data-jello-height> whose layout we fake: 30px per row. */
+  function list() {
+    const ul = document.createElement('ul')
+    ul.setAttribute('data-jello-height', '')
+    Object.defineProperty(ul, 'offsetHeight', { get: () => ul.children.length * 30, configurable: true })
+    document.body.append(ul)
+    return ul
+  }
+  const li = () => document.createElement('li')
+
+  it('data-jello-height: the height springs when a row is added, and when one is removed', async () => {
+    const ul = list()
+    ul.append(li(), li()) // 60px before anything is watching
+    const stop = auto()
+
+    ul.append(li())
+    await tick()
+    const grow = heights(animsOf(ul)[0]!)
+    expect(grow[0]).toBe(60) // the height it had, not the one it has
+    expect(Math.max(...grow)).toBeGreaterThan(93) // past the 30px it grows by, then back
+    expect(grow.at(-1)).toBe(90)
+    clock = endOf(animsOf(ul)[0]!)
+    animsOf(ul)[0]!.onfinish!()
+
+    ul.lastElementChild!.remove()
+    await tick()
+    const shrink = heights(animsOf(ul).at(-1)!)
+    expect(shrink[0]).toBe(90)
+    expect(Math.min(...shrink)).toBeLessThan(57)
+    expect(shrink.at(-1)).toBe(60)
+    stop()
+  })
+
+  it('data-jello-height: shrinking to an empty list never bakes a negative height', async () => {
+    const ul = list()
+    ul.append(li()) // 30px
+    const stop = auto()
+    ul.firstElementChild!.remove() // filtered down to nothing
+    await tick()
+    const h = heights(animsOf(ul)[0]!)
+    expect(Math.min(...h)).toBe(0) // the spring overshoots past 0 — clamped, not rejected by CSS
+    expect(h.at(-1)).toBe(0)
+    stop()
+  })
+
+  it('data-jello-height: a change that leaves the height alone does not animate', async () => {
+    const ul = list()
+    ul.append(li())
+    const stop = auto()
+    ul.replaceChild(li(), ul.firstElementChild!) // one in, one out
+    await tick()
+    expect(animsOf(ul)).toHaveLength(0)
     stop()
   })
 })

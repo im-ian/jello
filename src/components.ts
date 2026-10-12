@@ -11,7 +11,8 @@ import { impulse, spring } from './spring'
  * ones — so it works with any design system and never gets in the way of
  * built-in accessibility.
  *
- *   press       buttons, links, cards, tabs, menu items …          squash on press
+ *   press       buttons, links, cards, tabs …                       squash on press
+ *   row         [role=option|menuitem|treeitem]                     the same press, softened: flat and inside a list
  *   field       input, textarea, select, contenteditable, textbox   swell on focus, wiggle while typing, shake when invalid
  *   step        input[type=number], [role=spinbutton]               bumped the way the value moved: up lifts, down drops
  *   toggle      checkbox, radio, [role=switch|checkbox|radio]       boing when the checked state changes
@@ -26,7 +27,7 @@ import { impulse, spring } from './spring'
  *   <details> opened by code    → drops open  <dialog>/popover opened → springs in
  *   inserted [data-jello-enter] → springs in (value = start scale, default 0.6)
  */
-export type Kind = 'press' | 'field' | 'step' | 'toggle' | 'range' | 'disclosure'
+export type Kind = 'press' | 'row' | 'field' | 'step' | 'toggle' | 'range' | 'disclosure'
 
 /** What counts as a control when looking up from the event target. */
 export const CONTROL = [
@@ -48,6 +49,8 @@ export const CONTROL = [
 const TOGGLE_ROLE = /^(switch|checkbox|radio|menuitemcheckbox|menuitemradio)$/
 const FIELD_ROLE = /^(textbox|combobox|searchbox)$/
 const PRESS_INPUT = /^(button|submit|reset|image|color|file)$/
+/** A row inside a container: a listbox option, a menu item, a tree item. */
+const ROW_ROLE = /^(option|menuitem|treeitem)$/
 
 export function kindOf(el: Element): Kind {
   const tag = el.tagName
@@ -64,6 +67,7 @@ export function kindOf(el: Element): Kind {
   if (TOGGLE_ROLE.test(role)) return 'toggle'
   if (role === 'slider') return 'range'
   if (role === 'spinbutton') return 'step'
+  if (ROW_ROLE.test(role)) return 'row'
   if (FIELD_ROLE.test(role) || (el as HTMLElement).isContentEditable) return 'field'
   return 'press'
 }
@@ -151,7 +155,8 @@ export function invalid(el: JelloElement) {
 }
 
 export function selected(el: JelloElement) {
-  pop(el, { strength: 0.45 })
+  // A row is as wide as the list it sits in, so the full pop pushes it out sideways.
+  pop(el, { strength: kindOf(el) === 'row' ? 0.15 : 0.45 })
 }
 
 const GLIDE = /* @__PURE__ */ spring({ duration: 0.45, bounce: 0.35 })
@@ -187,9 +192,8 @@ function indicatorOf(tab: Element): { ind: HTMLElement; vertical: boolean } | nu
  * ours() clamps squash at −0.8, so R tops out near 25× across and bottoms out
  * near 1/25 down. No tablist is that lopsided.
  *
- * ponytail: measured at bind and on each selection, so a webfont landing later
- * leaves it a px or two off until the next selection. ResizeObserver on the
- * tablist is the upgrade.
+ * Re-measured on every selection and whenever the tablist resizes (see
+ * snapIndicators), so a late webfont or a reveal from display:none is caught.
  */
 export function moveIndicator(tab: Element, snap = prefersReducedMotion()) {
   const found = indicatorOf(tab)
