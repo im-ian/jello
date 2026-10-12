@@ -40,6 +40,29 @@ function originOf(el: Element, w: number, h: number): [number, number] {
   return [Number.isFinite(x) ? x! : w / 2, Number.isFinite(y) ? y! : h / 2]
 }
 
+/**
+ * What a person sees is not the angle but how far the far corner travels, and
+ * that grows with the element: at 3° a 94px button lifts (94/2)·sin3° = 2.5px,
+ * an 800px card lifts 21px — the same tilt, eight times the heave. So cap the
+ * lift and let the angle follow: above 2·MAX_LIFT wide, tilt ∝ 1/width.
+ *
+ * MAX_LIFT is the lift of the widest ordinary control at the widest preset —
+ * a 200px button at wobbly's 3° needs 100·sin3° = 5.2px — so nothing
+ * button-sized moves at all, while an 800px card comes down from 3° to
+ * asin(6/400) = 0.86°.
+ *
+ * Half the width is the honest term: the corner also drops (h/2)(cos θ − 1),
+ * which is 0.03px on a 50px box at 3°.
+ */
+const MAX_LIFT = 6
+
+/** Degrees to lean when pressed at `lx` in an element `w` wide. */
+function leanAt(f: Feel, w: number, lx: number): number {
+  if (!f.tilt || !w) return 0
+  const cap = (Math.asin(Math.min(1, MAX_LIFT / (w / 2))) * 180) / Math.PI
+  return Math.min(f.tilt, cap) * clamp1((lx - w / 2) / (w / 2))
+}
+
 /** Push in. Returns the lean angle used (for pointer-move updates). */
 export function pressIn(el: JelloElement, f: Feel, cx?: number, cy?: number): number {
   const reduced = prefersReducedMotion()
@@ -51,7 +74,7 @@ export function pressIn(el: JelloElement, f: Feel, cx?: number, cy?: number): nu
     fadeTo(el, DIM, 90)
     return 0
   }
-  const lean = pointer && f.tilt && w ? f.tilt * clamp1((lx - w / 2) / (w / 2)) : 0
+  const lean = pointer ? leanAt(f, w, lx) : 0
   let px = 0
   let py = 0
   if (pointer && f.pivot === 'pointer') {
@@ -144,7 +167,7 @@ function onMove(e: PointerEvent) {
   dentMove(h.el, lx, ly)
   if (!h.f.tilt || prefersReducedMotion()) return
   const [w] = sizeOf(h.el)
-  const lean = w ? h.f.tilt * clamp1((lx - w / 2) / (w / 2)) : 0
+  const lean = leanAt(h.f, w, lx)
   if (Math.abs(lean - h.lean) < 0.25) return // don't re-plan for sub-pixel wiggles
   h.lean = lean
   motionFor(h.el).update((c) => c.to('tilt', lean, h.f.press))

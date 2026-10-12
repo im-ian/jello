@@ -5,7 +5,7 @@ export interface PressFeel {
   squash: number
   /** How much it shrinks while held (0–0.2). */
   depth: number
-  /** Max degrees it leans toward the press point. 0 to disable. */
+  /** Max degrees it leans toward the press point, reduced on wide elements so the corner never lifts far. 0 to disable. */
   tilt: number
   /** Spring used while pressing in. */
   press: SpringConfig

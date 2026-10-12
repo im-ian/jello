@@ -201,6 +201,30 @@ describe('press / release (WAAPI driver)', () => {
     expect(anims).toHaveLength(2)
     expect(rotateOf(anims[1]!.keyframes.at(-1)!)).toBeCloseTo(0, 2)
   })
+
+  it('caps how far the corner lifts, so a wide element does not heave', () => {
+    const wide = (w: number) => {
+      const made = fakeEl()
+      Object.defineProperty(made.el, 'offsetWidth', { value: w, configurable: true })
+      made.el.getBoundingClientRect = () =>
+        ({ left: 0, top: 0, width: w, height: 50, right: w, bottom: 50, x: 0, y: 0 }) as DOMRect
+      jello(made.el)
+      return made
+    }
+    const tilt = (a: FakeAnim) => rotateOf(a.keyframes.at(-1)!)
+    const lift = (a: FakeAnim, w: number) => (w / 2) * Math.sin((tilt(a) * Math.PI) / 180)
+
+    const btn = wide(94)
+    const card = wide(800)
+    down(btn.el, 81, 94, 25) // the right edge of each: full lean
+    down(card.el, 82, 800, 25)
+    expect(tilt(btn.anims[0]!)).toBeCloseTo(3, 2) // button-sized: wobbly's 3°, untouched
+    expect(lift(btn.anims[0]!, 94)).toBeCloseTo(2.46, 1)
+    expect(tilt(card.anims[0]!)).toBeCloseTo(0.86, 2) // 800px: asin(6 / 400)
+    expect(lift(card.anims[0]!, 800)).toBeCloseTo(6, 1) // the lift is capped, so the angle gives way
+    up(81)
+    up(82)
+  })
 })
 
 describe('deforms around the press point', () => {

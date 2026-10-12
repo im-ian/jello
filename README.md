@@ -104,7 +104,7 @@ h.destroy()
 | `preset` | `'wobbly'` | `firm` · `gentle` · `wobbly` · `bouncy` |
 | `squash` | `0.1` | 누를 때 찌그러지는 정도 |
 | `depth` | `0.05` | 누를 때 작아지는 정도 |
-| `tilt` | `3` | 누른 쪽으로 기우는 최대 각도(°) |
+| `tilt` | `3` | 누른 쪽으로 기우는 최대 각도(°). 가로로 긴 요소는 모서리가 6px보다 더 들리지 않도록 각도를 줄입니다 |
 | `pivot` | `'pointer'` | `'pointer'` · `'origin'` |
 | `dent` | `true` | 보조개 |
 | `press` | `{ duration: 0.2, bounce: 0.25 }` | 누를 때 스프링 |
