@@ -658,6 +658,121 @@ describe('slider momentum', () => {
   })
 })
 
+describe('stepper', () => {
+  const tys = (a: FakeAnim) => a.keyframes.map((k) => stateOf(k).ty)
+
+  it('number input: pressed like a field, lifted when the value goes up, dropped when it goes down', () => {
+    const stop = auto()
+    const { el, anims } = fakeEl('input', { type: 'number', value: '3' }, container())
+    down(el, 61)
+    expect(scaleOf(anims.at(-1)!.keyframes.at(-1)!)[1]).toBeCloseTo(0.98 * 0.975, 3) // not a button press
+    up(61)
+    clock += 2000
+    setValue(el, 4) // the value attribute still says 3, so the first step counts
+    expect(Math.min(...tys(anims.at(-1)!))).toBeLessThan(-1)
+    clock += 2000
+    setValue(el, 3)
+    expect(Math.max(...tys(anims.at(-1)!))).toBeGreaterThan(1)
+    stop()
+  })
+
+  it('number input: an unchanged or non-numeric value does not move it', () => {
+    const stop = auto()
+    const { el, anims } = fakeEl('input', { type: 'number', value: '3' }, container())
+    setValue(el, 3)
+    expect(anims).toHaveLength(0)
+    clock += 2000
+    ;(el as HTMLInputElement).value = 'x'
+    el.dispatchEvent(new Event('input', { bubbles: true }))
+    expect(anims).toHaveLength(0)
+    clock += 2000
+    setValue(el, 4)
+    expect(Math.min(...tys(anims.at(-1)!))).toBeLessThan(-1) // a NaN would have stuck to the channel for good
+    stop()
+  })
+
+  it('aria-valuenow: a spinbutton is bumped, a slider still gets its momentum, a progressbar nothing', async () => {
+    const stop = auto()
+    const c = container()
+    const attrs = { 'aria-valuemin': '0', 'aria-valuemax': '10', 'aria-valuenow': '5' }
+    const { el: spin, anims: spinAnims } = fakeEl('div', { role: 'spinbutton', ...attrs }, c)
+    const { el: slider, anims: sliderAnims } = fakeEl('div', { role: 'slider', ...attrs }, c)
+    const { el: bar, anims: barAnims } = fakeEl('div', { role: 'progressbar', ...attrs }, c)
+    clock += 16
+    for (const el of [spin, slider, bar]) el.setAttribute('aria-valuenow', '7')
+    await tick()
+    expect(Math.min(...tys(spinAnims.at(-1)!))).toBeLessThan(-1) // straight away, no waiting for a stop
+    expect(barAnims).toHaveLength(0)
+    await new Promise((r) => setTimeout(r, 120))
+    expect(Math.max(...sliderAnims[0]!.keyframes.map((k) => translateOf(k)[0]))).toBeGreaterThan(1)
+    stop()
+  })
+})
+
+describe('tab indicator', () => {
+  /**
+   * A tablist whose layout we fake: tabs laid out left to right, and an
+   * indicator CSS left sitting on the first one.
+   */
+  function tablist(widths = [60, 80, 100]) {
+    const list = container()
+    list.setAttribute('role', 'tablist')
+    const lay = (el: Element, left: number, width: number) => {
+      Object.defineProperty(el, 'offsetLeft', { value: left, configurable: true })
+      Object.defineProperty(el, 'offsetWidth', { value: width, configurable: true })
+      Object.defineProperty(el, 'offsetParent', { value: list, configurable: true })
+    }
+    const { el: ind } = fakeEl('span', { 'data-jello-indicator': '' }, list)
+    lay(ind, 0, widths[0]!)
+    let left = 0
+    const tabs = widths.map((w, i) => {
+      const { el } = fakeEl('button', { role: 'tab', 'aria-selected': String(i === 0) }, list)
+      lay(el, left, w)
+      left += w
+      return el
+    })
+    return { ind, tabs }
+  }
+
+  it('snaps onto the already-selected tab at bind time, without animating', () => {
+    const { ind, tabs } = tablist()
+    tabs[0]!.setAttribute('aria-selected', 'false')
+    tabs[1]!.setAttribute('aria-selected', 'true')
+    const stop = auto()
+    const a = animsOf(ind).at(-1)!
+    expect(stateOf(a.keyframes[0]!).tx).toBeCloseTo(70, 1) // (60 + 80/2) − (0 + 60/2)
+    expect(stateOf(a.keyframes[0]!)).toEqual(stateOf(a.keyframes.at(-1)!)) // placed, not travelled
+    stop()
+  })
+
+  it('glides onto a newly selected tab: its centre, its width, same height', async () => {
+    const { ind, tabs } = tablist()
+    const stop = auto()
+    tabs[0]!.setAttribute('aria-selected', 'false')
+    tabs[2]!.setAttribute('aria-selected', 'true')
+    await tick()
+    const a = animsOf(ind).at(-1)!
+    const end = stateOf(a.keyframes.at(-1)!)
+    expect(end.tx).toBeCloseTo(160, 1) // (140 + 100/2) − (0 + 60/2)
+    expect(end.sx).toBeCloseTo(100 / 60, 2)
+    expect(end.sy).toBeCloseTo(1, 2)
+    expect(stateOf(a.keyframes[0]!).tx).toBeCloseTo(0, 1) // starts where it was
+    expect(Math.min(...a.keyframes.map((k) => stateOf(k).sy))).toBeLessThan(0.99) // stretched on the way
+    stop()
+  })
+
+  it('a tablist without an indicator just pops the tab', async () => {
+    const stop = auto()
+    const list = container()
+    list.setAttribute('role', 'tablist')
+    const { el: tab, anims } = fakeEl('button', { role: 'tab', 'aria-selected': 'false' }, list)
+    tab.setAttribute('aria-selected', 'true')
+    await tick()
+    expect(anims).toHaveLength(1)
+    stop()
+  })
+})
+
 describe('accordion', () => {
   /** <details> whose layout we fake: closed 40px tall, open 140px. */
   function details(parent: Element, name?: string) {

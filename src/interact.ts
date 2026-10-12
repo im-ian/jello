@@ -5,6 +5,8 @@ import {
   focused,
   invalid,
   kindOf,
+  moveIndicator,
+  stepped,
   toggled,
   typed,
   WATCHED,
@@ -47,12 +49,13 @@ export function resolveFeel(o: JelloOptions = {}): Feel {
  */
 const kindFeels = { field: new WeakMap<Feel, Feel>(), disclosure: new WeakMap<Feel, Feel>() }
 function feelForKind(f: Feel, kind: Kind): Feel {
-  if (kind !== 'field' && kind !== 'disclosure') return f
-  const cache = kindFeels[kind]
+  const soft = kind === 'step' ? 'field' : kind // a stepper is a field with buttons
+  if (soft !== 'field' && soft !== 'disclosure') return f
+  const cache = kindFeels[soft]
   let g = cache.get(f)
   if (!g) {
     g =
-      kind === 'field'
+      soft === 'field'
         ? { ...f, depth: Math.min(f.depth, 0.02), squash: Math.min(f.squash, 0.025), tilt: 0, dent: false }
         : { ...f, depth: 0, squash: 0, tilt: 0 }
     cache.set(f, g)
@@ -101,6 +104,20 @@ function enabled(scope: Scope, el: Element): boolean {
   return !!host && !isOff(host)
 }
 
+/**
+ * Tab indicators start wherever CSS left them: put each one on its selected
+ * tab, with no motion. Run at bind time and for tablists rendered later, so
+ * the app never has to hardcode a starting offset.
+ */
+function snapIndicators(scope: Scope, root: Document | Element) {
+  const inds = Array.from(root.querySelectorAll('[data-jello-indicator]'))
+  if (root instanceof Element && root.matches('[data-jello-indicator]')) inds.push(root)
+  for (const ind of inds) {
+    const tab = ind.closest('[role="tablist"]')?.querySelector('[role="tab"][aria-selected="true"]')
+    if (tab && enabled(scope, tab)) moveIndicator(tab, true)
+  }
+}
+
 const LISTEN = ['pointerdown', 'keydown', 'keyup', 'focusout', 'focusin', 'input', 'change', 'invalid', 'toggle'] as const
 
 /** Wire one scope. Returns a function that unwires it. */
@@ -127,11 +144,12 @@ function bind(scope: Scope, enter: boolean): () => void {
         if (kind === 'press' || kind === 'disclosure') onKey(el, feel, e as KeyboardEvent)
         break
       case 'focusin':
-        if (kind === 'field' && e.target === el && !pressedRecently(el)) focused(el)
+        if ((kind === 'field' || kind === 'step') && e.target === el && !pressedRecently(el)) focused(el)
         else if (kind === 'range') slideSeed(el)
         break
       case 'input':
         if (kind === 'field') typed(el)
+        else if (kind === 'step') stepped(el)
         else if (kind === 'range') slideMoved(el)
         break
       case 'change':
@@ -175,6 +193,7 @@ function bind(scope: Scope, enter: boolean): () => void {
                 const found = n.matches('[data-jello-enter]') ? [n] : []
                 found.push(...Array.from(n.querySelectorAll('[data-jello-enter]')))
                 for (const el of found) entered(el as JelloElement, Number(el.getAttribute('data-jello-enter')) || 0.6)
+                snapIndicators(scope, n)
               })
             }
           }
@@ -187,6 +206,7 @@ function bind(scope: Scope, enter: boolean): () => void {
     attributeFilter: WATCHED,
     childList: enter,
   })
+  snapIndicators(scope, scope.root)
 
   return () => {
     for (const type of LISTEN) scope.root.removeEventListener(type, handle, true)
