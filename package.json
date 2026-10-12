@@ -44,7 +44,8 @@
     "typecheck": "tsc --noEmit",
     "size": "node scripts/size.mjs",
     "playground": "node scripts/build-playground.mjs",
-    "site": "node scripts/build-playground.mjs --site"
+    "site": "node scripts/build-playground.mjs --site",
+    "preview": "npm run build && npm run site && esbuild --servedir=site --serve=4173"
   },
   "devDependencies": {
     "esbuild": "^0.28.2",

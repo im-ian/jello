@@ -230,3 +230,12 @@ npm test
 npm run build       # dist/
 npm run site        # site/ (데모)
 ```
+
+데모 미리보기:
+
+```bash
+npm run preview     # 빌드 후 http://127.0.0.1:4173 — 배포본과 같은 구성
+npm run playground  # playground/dist/index.html — 한 파일, 브라우저로 바로 열기
+```
+
+`site/`는 라이브러리를 별도 파일로 불러오므로 `file://`로 열면 안 되고 `preview`가 필요합니다. `playground`는 번들을 끼워 넣은 한 파일이라 그냥 열어도 됩니다.
