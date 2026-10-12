@@ -20,6 +20,11 @@ const script = forSite
   ? '<script src="./jello.global.js"></script>'
   : `<script>\n${read('../dist/jello.global.js').replace(/<\/script/gi, '<\\/script')}\n</script>`
 
+// The jelly symbol as a data URI, so the single-file preview carries its own
+// icon and neither output needs the file copied next to it. encodeURI leaves
+// "#" alone (it reads as a fragment delimiter), which would cut the colours off.
+const icon = encodeURI(read('../assets/jelly.svg').trim()).replace(/#/g, '%23')
+
 const head = page.slice(0, split + '</style>'.length)
 const body = page.slice(split + '</style>'.length).replace(MARK, () => script) // fn: a bundle can contain $&
 const doc = `<!doctype html>
@@ -28,6 +33,7 @@ const doc = `<!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="description" content="누른 자리가 말랑하게 들어가고, 놓으면 출렁이는 UI 피드백 라이브러리">
+<link rel="icon" href="data:image/svg+xml,${icon}">
 ${head.trim()}
 </head>
 <body>

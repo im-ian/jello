@@ -1,8 +1,13 @@
-# jello
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/wordmark-dark.svg">
+    <img src="assets/wordmark.svg" alt="jello" width="220">
+  </picture>
+</p>
 
-누른 자리가 말랑하게 들어가고, 놓으면 출렁이는 UI 피드백 라이브러리.
+<p align="center">누른 자리가 말랑하게 들어가고, 놓으면 출렁이는 UI 피드백 라이브러리.</p>
 
-**데모**: https://im-ian.github.io/jello/
+<p align="center"><a href="https://im-ian.github.io/jello/"><b>데모 보기</b></a></p>
 
 ## 설치
 
