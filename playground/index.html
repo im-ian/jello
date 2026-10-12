@@ -16,7 +16,6 @@
   --code-bg: #efe7ee;
   --focus: #2f6bff;
   --shadow: rgb(70 30 60 / 0.16);
-  --sheen: rgb(255 255 255 / 0.72);  /* the glossy top edge of a jelly */
 
   /* jelly flavours, each with a readable label colour */
   --raspberry: #d7264f; --on-raspberry: #ffffff;
@@ -37,7 +36,7 @@
   :root:not([data-theme="light"]) {
     --bg: #1a121e; --plate: #241a29; --ink: #f4eaf3; --ink-soft: #b8a6ba; --rule: #3a2d41;
     --accent: #ff5a80; --accent-ink: #2b0a15; --css-line: #92a4f2; --code-bg: #2b2031;
-    --focus: #8fb0ff; --shadow: rgb(0 0 0 / 0.45); --sheen: rgb(255 255 255 / 0.07);
+    --focus: #8fb0ff; --shadow: rgb(0 0 0 / 0.45);
     --raspberry: #e83a63; --blueberry: #5a73e6; --apricot: #f5ab55; --lime: #94d457;
     color-scheme: dark;
   }
@@ -45,7 +44,7 @@
 :root[data-theme="dark"] {
   --bg: #1a121e; --plate: #241a29; --ink: #f4eaf3; --ink-soft: #b8a6ba; --rule: #3a2d41;
   --accent: #ff5a80; --accent-ink: #2b0a15; --css-line: #92a4f2; --code-bg: #2b2031;
-  --focus: #8fb0ff; --shadow: rgb(0 0 0 / 0.45); --sheen: rgb(255 255 255 / 0.07);
+  --focus: #8fb0ff; --shadow: rgb(0 0 0 / 0.45);
   --raspberry: #e83a63; --blueberry: #5a73e6; --apricot: #f5ab55; --lime: #94d457;
   color-scheme: dark;
 }
@@ -73,8 +72,8 @@ body {
 }
 .wrap > * { grid-column: mid; }
 .wrap > .wide { grid-column: full; inline-size: min(1120px, 100%); justify-self: center; }
-/* only the grid uses the extra room; the heading stays on the prose column */
-.wide > :not(.gallery, .toasts) { inline-size: min(660px, 100%); margin-inline: auto; }
+/* only the nav + panel layout uses the extra room; the heading stays on the prose column */
+.wide > :not(.docs, .toasts) { inline-size: min(660px, 100%); margin-inline: auto; }
 h1, h2, h3 { margin: 0; text-wrap: balance; }
 p { margin: 0; }
 a { color: var(--accent); text-underline-offset: 3px; }
@@ -236,34 +235,31 @@ pre.wrapcode { white-space: pre-wrap; word-break: break-all; max-height: 9.5rem;
 .cm { color: var(--ink-soft); }
 
 /* ------------------------------------------------------------ gallery */
-.group { display: grid; gap: 12px; padding-block: 18px; border-top: 1px solid var(--rule); min-width: 0; }
-.group:first-child { border-top: 0; }
-.group h3 { font-size: var(--step-0); font-weight: 700; display: flex; flex-wrap: wrap; gap: 2px 10px; align-items: baseline; }
-.group h3 code { font-size: 0.72rem; font-weight: 400; color: var(--ink-soft); }
+.group { display: grid; gap: 14px; min-width: 0; }
+.ghead { display: grid; gap: 3px; }
+.ghead h3 { font-size: var(--step-1); line-height: 1.35; font-weight: 700; }
+.capi { font-family: var(--f-mono); font-size: 0.78rem; color: var(--ink-soft); }
 
-.filters { justify-content: flex-start; }
-.gallery {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 18.5rem), 1fr));
-  gap: 14px; align-items: start;
-}
-/* a card is a little plate of jelly: tinted with its category's flavour, glossy on top */
+/* one quiet bordered box, the same idiom as .acc / .menu / .lbx. The category
+   colour is carried by the dots on the heading and the nav item, not the panel. */
 .gcard {
   --f: var(--accent); --on: var(--accent-ink);
-  border-top: 0; padding: 16px 16px 18px; align-content: start; overflow-wrap: anywhere;
-  border-radius: 20px 20px 24px 24px;
-  background: linear-gradient(180deg, color-mix(in oklab, var(--f), var(--plate) 88%), var(--plate) 44%);
-  box-shadow: inset 0 1.5px 0 var(--sheen), 0 1px 0 var(--rule), 0 16px 28px -22px var(--shadow);
+  padding: 22px 22px 24px; align-content: start; overflow-wrap: anywhere;
+  border: 1.5px solid var(--rule); border-radius: 20px; min-block-size: 17rem;
+  background: var(--plate);
 }
-.gcard h3::before {
-  content: ""; inline-size: 9px; block-size: 9px; border-radius: 50%; flex: none;
-  background: var(--f); align-self: center;
+.gcard p { max-inline-size: 48em; } /* the panel is wide; the sentences in it are not */
+.ghead h3::before {
+  content: ""; display: inline-block; inline-size: 9px; block-size: 9px; border-radius: 50%;
+  background: var(--f); margin-inline-end: 9px; translate: 0 -2px;
 }
-.gcard[data-cat="press"] { --f: var(--raspberry); --on: var(--on-raspberry); }
-.gcard[data-cat="input"] { --f: var(--blueberry); --on: var(--on-blueberry); }
-.gcard[data-cat="choice"] { --f: var(--lime); --on: var(--on-lime); }
-.gcard[data-cat="nav"] { --f: var(--apricot); --on: var(--on-apricot); }
-.gcard[data-cat="overlay"] { --f: var(--ink); --on: var(--bg); }
-.gcard[data-cat="feedback"] { --f: var(--raspberry); --on: var(--on-raspberry); }
+/* one flavour per category: the panel's tint and its nav dot read the same variable */
+[data-cat="press"] { --f: var(--raspberry); --on: var(--on-raspberry); }
+[data-cat="input"] { --f: var(--blueberry); --on: var(--on-blueberry); }
+[data-cat="choice"] { --f: var(--lime); --on: var(--on-lime); }
+[data-cat="nav"] { --f: var(--apricot); --on: var(--on-apricot); }
+[data-cat="overlay"] { --f: var(--ink); --on: var(--bg); }
+[data-cat="feedback"] { --f: var(--raspberry); --on: var(--on-raspberry); }
 
 /* fields */
 .fields { display: grid; gap: 12px; }
@@ -292,6 +288,11 @@ pre.wrapcode { white-space: pre-wrap; word-break: break-all; max-height: 9.5rem;
 .step input::-webkit-outer-spin-button, .step input::-webkit-inner-spin-button { appearance: none; -webkit-appearance: none; margin: 0; }
 .step-v { inline-size: auto; min-inline-size: 5.25rem; text-align: center; font-variant-numeric: tabular-nums; cursor: ns-resize; }
 .srch input[type="search"] { inline-size: auto; flex: 1 1 8rem; text-align: start; }
+/* autocomplete: jello owns this list's height, so nothing here touches it.
+   Empty means closed — the box collapses and the spring runs it down to nothing. */
+.srch { display: grid; gap: 8px; max-inline-size: 26rem; }
+.srch-list { list-style: none; margin: 0; }
+.srch-list:empty { padding: 0; border-width: 0; }
 .note { font-size: 0.75rem; color: var(--ink-soft); }
 .row { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; }
 .opt { display: inline-flex; gap: 8px; align-items: center; font-size: var(--step--1); cursor: pointer; }
@@ -331,6 +332,19 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
 .tabs-v { flex-direction: column; overflow-x: visible; }
 .tabs-v .tab { text-align: left; }
 .tabs-v .tab-ind { inset-block: auto; inset-inline: 4px; top: 4px; inline-size: auto; block-size: 2.4rem; }
+
+/* the component docs: one tall vertical tablist down the left, one panel on the right.
+   The nav is a real tablist, so the plate that follows the selection is the same
+   data-jello-indicator the 탭 panel demos — no second mechanism. */
+.docs { display: grid; grid-template-columns: minmax(0, 15.5rem) minmax(0, 1fr); gap: 18px; align-items: start; }
+.docs-nav {
+  inline-size: 100%; position: sticky; top: 16px;
+  max-block-size: calc(100vh - 32px); overflow: hidden auto; scrollbar-width: thin;
+}
+.doc-tab { display: flex; align-items: center; gap: 9px; inline-size: 100%; }
+.doc-tab::before { content: ""; inline-size: 8px; block-size: 8px; border-radius: 50%; background: var(--f); flex: none; }
+.doc-tab small { margin-inline-start: auto; font-size: 0.68rem; font-weight: 400; color: var(--ink-soft); }
+.docs-panels { min-width: 0; }
 .acc { display: grid; gap: 8px; }
 .acc details { border: 1.5px solid var(--rule); border-radius: 14px; background: var(--plate); }
 .acc summary {
@@ -404,12 +418,10 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
 .pager .chip[aria-current="page"] { background: var(--f); color: var(--on); border-color: var(--f); }
 .pager .ghost { padding: 7px 11px; }
 
-/* tooltip: the same plate as the menu, parked under its button where anchoring works */
 .tip { max-inline-size: min(18rem, calc(100vw - 32px)); padding: 10px 12px; font-size: var(--step--1); }
-@supports (anchor-name: --tip) {
-  #tip-btn { anchor-name: --tip; }
-  #tip { position: fixed; margin: 0; inset: auto; top: calc(anchor(--tip bottom) + 8px); left: anchor(--tip left); }
-}
+/* a popover lives in the top layer, where the page box means nothing: it would sit
+   centred in the viewport. Clear the UA's centring and let the script park it. */
+.menu[popover] { position: fixed; inset: auto; margin: 0; }
 
 /* design tokens — everything here is painted by the variables tokens() generated at runtime */
 .swatches { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -435,11 +447,20 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
 
 footer { font-size: 0.75rem; color: var(--ink-soft); font-family: var(--f-mono); border-top: 1px solid var(--rule); padding-top: 16px; }
 
+/* the nav stays vertical at every width — aria-orientation says vertical, and the
+   indicator measures the axis it is told. Narrow screens get it above the panel,
+   capped, with its own scroll. */
+@media (max-width: 860px) {
+  .docs { grid-template-columns: minmax(0, 1fr); }
+  /* relative, not static: the indicator is absolute and needs the list as its box */
+  .docs-nav { position: relative; top: auto; max-block-size: 11.5rem; }
+}
 @media (max-width: 460px) {
   .flavor { grid-template-columns: minmax(0, 1fr); gap: 8px; }
   .tune-view { grid-template-columns: minmax(0, 1fr); }
   .stat-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .controls { grid-template-columns: minmax(0, 1fr); }
+  .gcard { padding: 16px 16px 18px; min-block-size: 0; }
 }
 </style>
 
@@ -526,261 +547,304 @@ footer { font-size: 0.75rem; color: var(--ink-soft); font-family: var(--f-mono);
     <div class="head">
       <p class="api">&lt;div data-jello&gt; 안의 모든 컨트롤</p>
       <h2 id="h-comp">컴포넌트</h2>
-      <p>상자에 data-jello를 붙이면 안의 컨트롤이 종류에 맞게 반응해요. 네이티브 요소와 ARIA 상태를 그대로 쓰고, 카드마다 jello가 무엇을 보고 반응하는지 적어 뒀어요.</p>
+      <p>상자에 data-jello를 붙이면 안의 컨트롤이 종류에 맞게 반응해요. 네이티브 요소와 ARIA 상태를 그대로 쓰고, 항목마다 jello가 무엇을 보고 반응하는지 적어 뒀어요. 왼쪽 목록도 세로 탭이라, 고른 자리로 판이 미끄러져 와요.</p>
     </div>
-    <div class="chips filters" role="group" aria-label="분류별로 보기">
-      <button class="chip" type="button" data-filter="all" aria-pressed="true">전체</button>
-      <button class="chip" type="button" data-filter="press" aria-pressed="false">누르기</button>
-      <button class="chip" type="button" data-filter="input" aria-pressed="false">입력</button>
-      <button class="chip" type="button" data-filter="choice" aria-pressed="false">선택</button>
-      <button class="chip" type="button" data-filter="nav" aria-pressed="false">탐색</button>
-      <button class="chip" type="button" data-filter="overlay" aria-pressed="false">겹쳐 뜨는 것</button>
-      <button class="chip" type="button" data-filter="feedback" aria-pressed="false">피드백</button>
-    </div>
-    <p class="note" id="gal-count" role="status"></p>
-    <div class="gallery" data-jello>
-      <div class="group gcard" data-cat="press">
-        <h3>카드 <code>누른 자리 중심 · data-jello-pivot</code></h3>
-        <article class="card-demo" id="card" data-jello="gentle" role="button" tabindex="0" aria-label="큰 카드">
-          <b>모서리를 눌러 보세요</b>
-          <span>누른 점을 기준으로 찌그러지고 그 자리가 들어가요.</span>
-        </article>
-        <div class="row">
-          <label class="opt"><input id="card-pivot" type="checkbox" checked> 누른 점 기준</label>
-          <label class="opt"><input id="card-dent" type="checkbox" checked> 보조개</label>
-        </div>
-      </div>
-      <div class="group gcard" data-cat="press">
-        <h3>색 · 파일 <code>input[type=color] · input[type=file]</code></h3>
-        <div class="fields">
-          <label class="fld"><span>젤리 색</span><input id="c-color" type="color" value="#d7264f"></label>
-          <label class="fld"><span>사진 올리기</span><input id="c-file" type="file" accept="image/*"></label>
-        </div>
-        <p class="note">둘 다 고르는 창을 띄우는 버튼이라, 글자를 치는 입력칸이 아니라 눌리는 쪽으로 반응해요. 포커스 부풂이나 타이핑 흔들림은 없어요.</p>
+    <div class="docs" data-jello>
+      <div class="tabs tabs-v docs-nav" role="tablist" aria-orientation="vertical" aria-label="컴포넌트 목록">
+        <span class="tab-ind" data-jello-indicator aria-hidden="true"></span>
+        <button class="tab doc-tab" role="tab" type="button" id="nav-card" aria-controls="pan-card" aria-selected="true" data-cat="press">카드<small>누르기</small></button>
+        <button class="tab doc-tab" role="tab" type="button" id="nav-pick" aria-controls="pan-pick" aria-selected="false" tabindex="-1" data-cat="press">색 · 파일<small>누르기</small></button>
+        <button class="tab doc-tab" role="tab" type="button" id="nav-field" aria-controls="pan-field" aria-selected="false" tabindex="-1" data-cat="input">폼 필드<small>입력</small></button>
+        <button class="tab doc-tab" role="tab" type="button" id="nav-step" aria-controls="pan-step" aria-selected="false" tabindex="-1" data-cat="input">스테퍼<small>입력</small></button>
+        <button class="tab doc-tab" role="tab" type="button" id="nav-spin" aria-controls="pan-spin" aria-selected="false" tabindex="-1" data-cat="input">커스텀 스테퍼<small>입력</small></button>
+        <button class="tab doc-tab" role="tab" type="button" id="nav-srch" aria-controls="pan-srch" aria-selected="false" tabindex="-1" data-cat="input">검색<small>입력</small></button>
+        <button class="tab doc-tab" role="tab" type="button" id="nav-slider" aria-controls="pan-slider" aria-selected="false" tabindex="-1" data-cat="input">슬라이더<small>입력</small></button>
+        <button class="tab doc-tab" role="tab" type="button" id="nav-check" aria-controls="pan-check" aria-selected="false" tabindex="-1" data-cat="choice">체크박스 · 라디오<small>선택</small></button>
+        <button class="tab doc-tab" role="tab" type="button" id="nav-switch" aria-controls="pan-switch" aria-selected="false" tabindex="-1" data-cat="choice">스위치<small>선택</small></button>
+        <button class="tab doc-tab" role="tab" type="button" id="nav-chip" aria-controls="pan-chip" aria-selected="false" tabindex="-1" data-cat="choice">토글 칩<small>선택</small></button>
+        <button class="tab doc-tab" role="tab" type="button" id="nav-seg" aria-controls="pan-seg" aria-selected="false" tabindex="-1" data-cat="choice">세그먼트<small>선택</small></button>
+        <button class="tab doc-tab" role="tab" type="button" id="nav-star" aria-controls="pan-star" aria-selected="false" tabindex="-1" data-cat="choice">별점<small>선택</small></button>
+        <button class="tab doc-tab" role="tab" type="button" id="nav-lbx" aria-controls="pan-lbx" aria-selected="false" tabindex="-1" data-cat="choice">리스트박스<small>선택</small></button>
+        <button class="tab doc-tab" role="tab" type="button" id="nav-tabs" aria-controls="pan-tabs" aria-selected="false" tabindex="-1" data-cat="nav">탭<small>탐색</small></button>
+        <button class="tab doc-tab" role="tab" type="button" id="nav-vtabs" aria-controls="pan-vtabs" aria-selected="false" tabindex="-1" data-cat="nav">세로 탭<small>탐색</small></button>
+        <button class="tab doc-tab" role="tab" type="button" id="nav-acc" aria-controls="pan-acc" aria-selected="false" tabindex="-1" data-cat="nav">아코디언<small>탐색</small></button>
+        <button class="tab doc-tab" role="tab" type="button" id="nav-acc2" aria-controls="pan-acc2" aria-selected="false" tabindex="-1" data-cat="nav">커스텀 아코디언<small>탐색</small></button>
+        <button class="tab doc-tab" role="tab" type="button" id="nav-pager" aria-controls="pan-pager" aria-selected="false" tabindex="-1" data-cat="nav">페이지네이션<small>탐색</small></button>
+        <button class="tab doc-tab" role="tab" type="button" id="nav-menu" aria-controls="pan-menu" aria-selected="false" tabindex="-1" data-cat="overlay">메뉴<small>겹침</small></button>
+        <button class="tab doc-tab" role="tab" type="button" id="nav-dlg" aria-controls="pan-dlg" aria-selected="false" tabindex="-1" data-cat="overlay">대화상자<small>겹침</small></button>
+        <button class="tab doc-tab" role="tab" type="button" id="nav-tip" aria-controls="pan-tip" aria-selected="false" tabindex="-1" data-cat="overlay">툴팁<small>겹침</small></button>
+        <button class="tab doc-tab" role="tab" type="button" id="nav-toast" aria-controls="pan-toast" aria-selected="false" tabindex="-1" data-cat="feedback">토스트<small>피드백</small></button>
+        <button class="tab doc-tab" role="tab" type="button" id="nav-badge" aria-controls="pan-badge" aria-selected="false" tabindex="-1" data-cat="feedback">배지<small>피드백</small></button>
+        <button class="tab doc-tab" role="tab" type="button" id="nav-err" aria-controls="pan-err" aria-selected="false" tabindex="-1" data-cat="feedback">오류<small>피드백</small></button>
       </div>
 
-      <div class="group gcard" data-cat="input">
-        <h3>폼 필드 <code>focus · input · invalid · select change</code></h3>
-        <form class="fields" id="signup">
-          <label class="fld"><span>이메일</span><input id="su-email" type="email" required placeholder="you@example.com" autocomplete="off"></label>
-          <label class="fld"><span>한 줄 소개</span><textarea id="su-bio" rows="2" placeholder="글자를 칠 때마다 살짝 흔들려요"></textarea></label>
-          <label class="fld"><span>좋아하는 맛</span><span class="sel"><select id="su-flavor"><option>라즈베리</option><option>라임</option><option>살구</option><option>블루베리</option></select></span></label>
-          <button class="btn f-raspberry" type="submit">가입하기</button>
-          <p class="note">이메일을 비우고 가입하기 → 흔들림. 탭 키로 이동 → 살짝 부풂. 맛을 바꾸면 선택칸이 통통 튀어요.</p>
-        </form>
-      </div>
-      <div class="group gcard" data-cat="input">
-        <h3>스테퍼 <code>input[type=number]</code></h3>
-        <div class="step">
-          <button class="ghost step-b" type="button" data-step="-1" aria-label="수량 1 줄이기">−</button>
-          <input id="st-num" type="number" value="3" min="0" max="99" step="1" inputmode="numeric" aria-label="수량">
-          <button class="ghost step-b" type="button" data-step="1" aria-label="수량 1 늘리기">+</button>
-        </div>
-        <p class="note">값이 올라가면 위로 늘어나고, 내려가면 눌려 앉아요. 숫자를 직접 고쳐도, 위아래 화살표를 눌러도 같아요. 꾹 눌러 빠르게 올리면 한 칸마다가 아니라 맥박처럼 띄엄띄엄 튀어요.</p>
-      </div>
-      <div class="group gcard" data-cat="input">
-        <h3>커스텀 스테퍼 <code>[role=spinbutton] · aria-valuenow</code></h3>
-        <div class="step">
-          <button class="ghost step-b" type="button" data-spin="-1" aria-label="인분 1 줄이기">−</button>
-          <div class="step-v" id="spin" role="spinbutton" tabindex="0" aria-label="인분" aria-valuenow="2" aria-valuemin="1" aria-valuemax="12" aria-valuetext="2인분">2인분</div>
-          <button class="ghost step-b" type="button" data-spin="1" aria-label="인분 1 늘리기">+</button>
-        </div>
-        <p class="note">앱은 aria-valuenow만 바꿔요. 숫자가 어느 쪽으로 움직였는지는 jello가 속성 변화에서 읽어요. 포커스 두고 위아래 화살표도 돼요.</p>
-      </div>
-      <div class="group gcard" data-cat="input">
-        <h3>검색 <code>input[type=search] + button</code></h3>
-        <form class="step srch" id="srch" role="search">
-          <input id="srch-q" type="search" placeholder="맛 이름" aria-label="맛 검색" autocomplete="off">
-          <button class="ghost step-b" type="button" id="srch-clear" aria-label="검색어 지우기">×</button>
-        </form>
-        <p class="note">search도 글자를 치는 입력칸이라 한 글자마다 흔들려요. 지우기는 버튼이라 눌려요.</p>
-      </div>
-      <div class="group gcard" data-cat="input">
-        <h3>슬라이더 <code>input[type=range] · 놓을 때</code></h3>
-        <input id="sweet" type="range" min="0" max="100" value="40" aria-label="당도">
-        <p class="note">빠르게 끌다가 놓으면 그 방향으로 밀려났다 돌아와요. 멈추고 놓으면 밀리지 않아요.</p>
-      </div>
-
-      <div class="group gcard" data-cat="choice">
-        <h3>체크박스 · 라디오 <code>change</code></h3>
-        <div class="row">
-          <label class="opt"><input id="cb-1" type="checkbox" checked> 알림 받기</label>
-          <label class="opt"><input id="cb-2" type="checkbox"> 뉴스레터</label>
-        </div>
-        <div class="row" role="radiogroup" aria-label="크기">
-          <label class="opt"><input id="rd-1" type="radio" name="size" checked> 작게</label>
-          <label class="opt"><input id="rd-2" type="radio" name="size"> 보통</label>
-          <label class="opt"><input id="rd-3" type="radio" name="size"> 크게</label>
-        </div>
-        <p class="note">켤 때 더 크게, 끌 때 작게 통통 튀어요.</p>
-      </div>
-      <div class="group gcard" data-cat="choice">
-        <h3>스위치 <code>[role=switch] · aria-checked</code></h3>
-        <div class="row">
-          <button class="switch-ui" id="sw-1" role="switch" aria-checked="false" type="button" aria-labelledby="sw-1-label"></button>
-          <span id="sw-1-label" class="sw-text">야간 배송<small>직접 만든 스위치 · aria-checked</small></span>
-        </div>
-        <p class="note">손잡이가 움직이는 건 CSS 전환이고, 스위치 전체가 통통 튀는 건 jello예요. 둘 다 같은 스프링을 써요.</p>
-      </div>
-      <div class="group gcard" data-cat="choice">
-        <h3>토글 칩 <code>aria-pressed</code></h3>
-        <div class="row chips-row" role="group" aria-label="식감">
-          <button class="chip" type="button" aria-pressed="true">말랑</button>
-          <button class="chip" type="button" aria-pressed="false">탱글</button>
-          <button class="chip" type="button" aria-pressed="false">쫀득</button>
-        </div>
-        <p class="note">위의 분류 칩도 같은 방식이에요. 누르는 반응과 상태가 바뀐 반응이 겹쳐요.</p>
-      </div>
-      <div class="group gcard" data-cat="choice">
-        <h3>세그먼트 <code>input[type=radio] · change</code></h3>
-        <div class="seg" role="radiogroup" aria-label="배송">
-          <label class="seg-i"><input type="radio" name="ship" checked aria-label="일반 배송"><span>일반</span></label>
-          <label class="seg-i"><input type="radio" name="ship" aria-label="새벽 배송"><span>새벽</span></label>
-          <label class="seg-i"><input type="radio" name="ship" aria-label="퀵 배송"><span>퀵</span></label>
-        </div>
-        <p class="note">라디오를 숨기고 칸만 보여요. 좌우 화살표로도 바뀌어요.</p>
-      </div>
-      <div class="group gcard" data-cat="choice">
-        <h3>별점 <code>숨은 input → 보이는 요소</code></h3>
-        <div class="stars" role="radiogroup" aria-label="별점">
-          <label class="star-i"><input type="radio" name="rate" aria-label="별 1개"><span class="star" aria-hidden="true">★</span></label>
-          <label class="star-i"><input type="radio" name="rate" aria-label="별 2개"><span class="star" aria-hidden="true">★</span></label>
-          <label class="star-i"><input type="radio" name="rate" checked aria-label="별 3개"><span class="star" aria-hidden="true">★</span></label>
-          <label class="star-i"><input type="radio" name="rate" aria-label="별 4개"><span class="star" aria-hidden="true">★</span></label>
-          <label class="star-i"><input type="radio" name="rate" aria-label="별 5개"><span class="star" aria-hidden="true">★</span></label>
-        </div>
-        <p class="note">input이 눈에 안 보이면 바로 옆의 보이는 요소가 대신 움직여요. 누른 별 하나만 튀어요.</p>
-      </div>
-      <div class="group gcard" data-cat="choice">
-        <h3>리스트박스 <code>[role=option] · aria-selected</code></h3>
-        <div class="lbx" role="listbox" aria-label="맛 고르기">
-          <div class="lbx-o" role="option" aria-selected="true" tabindex="0">라즈베리</div>
-          <div class="lbx-o" role="option" aria-selected="false" tabindex="-1">라임</div>
-          <div class="lbx-o" role="option" aria-selected="false" tabindex="-1">살구</div>
-          <div class="lbx-o" role="option" aria-selected="false" tabindex="-1">블루베리</div>
-        </div>
-        <p class="note">aria-selected가 true가 된 항목만 튀어요. 빠진 쪽은 조용해요. 위아래 화살표로도 옮겨요.</p>
-      </div>
-
-      <div class="group gcard" data-cat="nav">
-        <h3>탭 <code>[role=tab] · aria-selected · data-jello-indicator</code></h3>
-        <div class="tabs" role="tablist" aria-label="젤리 정보">
-          <span class="tab-ind" data-jello-indicator aria-hidden="true"></span>
-          <button class="tab" role="tab" id="tab-a" aria-selected="true" aria-controls="tp-a" type="button">맛</button>
-          <button class="tab" role="tab" id="tab-b" aria-selected="false" aria-controls="tp-b" tabindex="-1" type="button">식감</button>
-          <button class="tab" role="tab" id="tab-c" aria-selected="false" aria-controls="tp-c" tabindex="-1" type="button">칼로리</button>
-        </div>
-        <p class="tabpanel" role="tabpanel" id="tp-a" aria-labelledby="tab-a">라즈베리, 라임, 살구, 블루베리 네 가지예요.</p>
-        <p class="tabpanel" role="tabpanel" id="tp-b" aria-labelledby="tab-b" hidden>젤라틴 2%면 말랑, 4%면 탱글해요.</p>
-        <p class="tabpanel" role="tabpanel" id="tp-c" aria-labelledby="tab-c" hidden>한 컵에 약 70kcal예요.</p>
-        <p class="note">고른 탭 뒤의 판이 미끄러져 따라와요. 앱은 aria-selected만 바꾸고, 판에는 data-jello-indicator 하나만 붙였어요.</p>
-      </div>
-      <div class="group gcard" data-cat="nav">
-        <h3>세로 탭 <code>aria-orientation="vertical"</code></h3>
-        <div class="vtabs">
-          <div class="tabs tabs-v" role="tablist" aria-orientation="vertical" aria-label="보관법">
-            <span class="tab-ind" data-jello-indicator aria-hidden="true"></span>
-            <button class="tab" role="tab" id="vtab-a" aria-selected="true" aria-controls="vtp-a" type="button">냉장</button>
-            <button class="tab" role="tab" id="vtab-b" aria-selected="false" aria-controls="vtp-b" tabindex="-1" type="button">냉동</button>
-            <button class="tab" role="tab" id="vtab-c" aria-selected="false" aria-controls="vtp-c" tabindex="-1" type="button">실온</button>
-          </div>
-          <div>
-            <p class="tabpanel" role="tabpanel" id="vtp-a" aria-labelledby="vtab-a">4℃에서 사흘쯤 가요. 물이 조금 빠지면서 탱글해져요.</p>
-            <p class="tabpanel" role="tabpanel" id="vtp-b" aria-labelledby="vtab-b" hidden>얼리면 젤라틴 그물이 끊어져서, 녹은 뒤엔 흐물흐물해져요.</p>
-            <p class="tabpanel" role="tabpanel" id="vtp-c" aria-labelledby="vtab-c" hidden>28℃가 넘으면 녹아요. 젤라틴은 체온 근처에서 풀려요.</p>
-          </div>
-        </div>
-        <p class="note">위아래 화살표로 옮겨요. 가로일 때는 넓이를, 세로일 때는 높이를 탭에 맞춰요.</p>
-      </div>
-      <div class="group gcard" data-cat="nav">
-        <h3>아코디언 <code>&lt;details&gt;</code></h3>
-        <div class="acc">
-          <details name="jelly-faq"><summary>젤리는 왜 흔들릴까요?</summary><p>젤라틴 그물 속에 물이 갇혀 있어서, 눌렸다 놓이면 탄성으로 돌아가며 몇 번 출렁여요. 스프링과 같은 원리예요.</p></details>
-          <details name="jelly-faq"><summary>냉장고에 오래 두면요?</summary><p>물이 빠져나와 단단해지고 덜 흔들려요. bounce를 낮춘 firm 프리셋과 비슷해요.</p></details>
-          <details name="jelly-faq"><summary>몇 번까지 출렁여요?</summary><p>bounce 0.65면 두 번 정도 눈에 보이게 출렁이고, 0.75면 서너 번이에요. 아래 직접 조절하기에서 바꿔 볼 수 있어요.</p></details>
-        </div>
-        <p class="note">제목은 가만히 있고 내용만 떨어지듯 열려요. 세 개는 name으로 묶여 한 번에 하나만 열려요.</p>
-      </div>
-      <div class="group gcard" data-cat="nav">
-        <h3>커스텀 아코디언 <code>[aria-expanded][aria-controls]</code></h3>
-        <div class="acc">
-          <div class="acc-item">
-            <button class="acc-head" type="button" id="acc-btn" aria-expanded="false" aria-controls="acc-panel">직접 만든 아코디언</button>
-            <div class="acc-panel" id="acc-panel" role="region" aria-labelledby="acc-btn" hidden><p>aria-expanded와 hidden만 바꾸면 aria-controls로 연결된 패널이 떨어지듯 열려요. details와 똑같이 움직여요.</p></div>
-          </div>
-        </div>
-        <p class="note">aria-haspopup이 붙어 있으면 아코디언이 아니라 메뉴로 보고, 패널 대신 버튼이 살짝 튀어요.</p>
-      </div>
-      <div class="group gcard" data-cat="nav">
-        <h3>페이지네이션 <code>button · aria-current="page"</code></h3>
-        <nav class="pager" id="pager" aria-label="페이지">
-          <button class="ghost" type="button" data-page="-1" aria-label="이전 페이지">‹</button>
-          <button class="chip" type="button" aria-current="page">1</button>
-          <button class="chip" type="button">2</button>
-          <button class="chip" type="button">3</button>
-          <button class="ghost" type="button" data-page="1" aria-label="다음 페이지">›</button>
-        </nav>
-        <p class="note">jello는 aria-current를 보지 않아요. 여기 움직임은 버튼을 누른 반응 하나예요. 화살표로 옮긴 쪽은 조용해요.</p>
-      </div>
-
-      <div class="group gcard" data-cat="overlay">
-        <h3>메뉴 <code>[popover]</code></h3>
-        <div class="row"><button class="chip" type="button" popovertarget="pop-menu">메뉴 열기</button></div>
-        <div class="menu" popover id="pop-menu">
-          <button type="button" popovertarget="pop-menu" popovertargetaction="hide">링크 복사</button>
-          <button type="button" popovertarget="pop-menu" popovertargetaction="hide">공유하기</button>
-          <button type="button" popovertarget="pop-menu" popovertargetaction="hide">신고하기</button>
-        </div>
-        <p class="note">팝오버가 열릴 때 0.85 크기에서 튀어나와요. 안의 항목은 각각 눌려요.</p>
-      </div>
-      <div class="group gcard" data-cat="overlay">
-        <h3>대화상자 <code>&lt;dialog&gt;</code></h3>
-        <div class="row"><button class="chip" type="button" id="open-dialog">대화상자 열기</button></div>
-        <dialog class="dlg" id="dlg" aria-labelledby="dlg-title">
-          <h3 id="dlg-title">젤리를 비울까요?</h3>
-          <p>장바구니에 담긴 젤리 3개가 사라져요.</p>
-          <div class="actions">
-            <button class="ghost" type="button" id="dlg-cancel">취소</button>
-            <button class="btn f-raspberry" type="button" id="dlg-ok">비우기</button>
-          </div>
-        </dialog>
-        <p class="note">open이 붙는 순간 0.9 크기에서 튀어나와요. 비우기를 누르면 토스트까지 이어져요.</p>
-      </div>
-      <div class="group gcard" data-cat="overlay">
-        <h3>툴팁 <code>[popover] · role=tooltip</code></h3>
-        <div class="row"><button class="chip" type="button" id="tip-btn" popovertarget="tip" aria-describedby="tip">젤라틴이 뭐예요?</button></div>
-        <div class="menu tip" popover id="tip" role="tooltip">콜라겐에서 뽑은 단백질이에요. 물을 가두는 그물을 만들어서 젤리가 흔들려요.</div>
-        <p class="note">메뉴와 같은 팝오버 경로예요. 마우스를 올려 띄우고 싶으면 앱에서 직접 열고 닫아야 해요.</p>
-      </div>
-
-      <div class="group gcard" data-cat="feedback">
-        <h3>토스트 <code>data-jello-enter</code></h3>
-        <div class="row"><button class="chip" type="button" id="make-toast">토스트 띄우기</button></div>
-        <p class="note">DOM에 추가될 때 적어 둔 크기에서 튀어나와요. 화면 아래에 떠요.</p>
-      </div>
-      <div class="group gcard" data-cat="feedback">
-        <h3>배지 <code>pop() · hop()</code></h3>
-        <div class="row">
-          <div class="cart" id="bell" aria-label="알림">
-            <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 4.5a6.5 6.5 0 0 0-6.5 6.5c0 5.5-2.5 6.5-2.5 9h18c0-2.5-2.5-3.5-2.5-9A6.5 6.5 0 0 0 16 4.5Z"/><path d="M13 24.5a3 3 0 0 0 6 0"/></svg>
-            <span class="badge" id="bell-badge" hidden>0</span>
-          </div>
-          <button class="btn f-raspberry" id="bell-add" type="button">알림 하나</button>
-          <button class="ghost" id="bell-clear" type="button">비우기</button>
-        </div>
-        <p class="note">속성이 아니라 코드로 부르는 쪽이에요. 처음 나타날 때 pop({ from: 0 }), 숫자가 바뀔 때 pop(), 종은 hop()이에요.</p>
-      </div>
-      <div class="group gcard" data-cat="feedback">
-        <h3>오류 <code>invalid · aria-invalid</code></h3>
-        <form class="fields" id="err-form">
-          <label class="fld"><span>쿠폰 코드 (영문 다섯 글자)</span><input id="err-code" type="text" required pattern="[A-Za-z]{5}" placeholder="JELLY" autocomplete="off" aria-describedby="err-msg"></label>
+      <div class="docs-panels">
+        <div class="group gcard" role="tabpanel" id="pan-card" aria-labelledby="nav-card" data-cat="press">
+          <div class="ghead"><h3>카드</h3><p class="capi"><code>누른 자리 중심 · data-jello-pivot</code></p></div>
+          <article class="card-demo" id="card" data-jello="gentle" role="button" tabindex="0" aria-label="큰 카드">
+            <b>모서리를 눌러 보세요</b>
+            <span>누른 점을 기준으로 찌그러지고 그 자리가 들어가요.</span>
+          </article>
           <div class="row">
-            <button class="btn f-raspberry" type="submit">확인</button>
-            <button class="ghost" id="err-mark" type="button">aria-invalid 붙이기</button>
+            <label class="opt"><input id="card-pivot" type="checkbox" checked> 누른 점 기준</label>
+            <label class="opt"><input id="card-dent" type="checkbox" checked> 보조개</label>
           </div>
-          <p class="note" id="err-msg" role="status"></p>
-        </form>
-        <p class="note">빈칸이나 다섯 글자가 아니면 브라우저가 invalid를 띄우고, 그때 흔들려요. 앱이 aria-invalid="true"를 붙여도 같아요.</p>
+        </div>
+
+        <div class="group gcard" role="tabpanel" id="pan-pick" aria-labelledby="nav-pick" data-cat="press" hidden>
+          <div class="ghead"><h3>색 · 파일</h3><p class="capi"><code>input[type=color] · input[type=file]</code></p></div>
+          <div class="fields">
+            <label class="fld"><span>젤리 색</span><input id="c-color" type="color" value="#d7264f"></label>
+            <label class="fld"><span>사진 올리기</span><input id="c-file" type="file" accept="image/*"></label>
+          </div>
+          <p class="note">둘 다 고르는 창을 띄우는 버튼이라, 글자를 치는 입력칸이 아니라 눌리는 쪽으로 반응해요. 포커스 부풂이나 타이핑 흔들림은 없어요.</p>
+        </div>
+
+        <div class="group gcard" role="tabpanel" id="pan-field" aria-labelledby="nav-field" data-cat="input" hidden>
+          <div class="ghead"><h3>폼 필드</h3><p class="capi"><code>focus · input · invalid · select change</code></p></div>
+          <form class="fields" id="signup">
+            <label class="fld"><span>이메일</span><input id="su-email" type="email" required placeholder="you@example.com" autocomplete="off"></label>
+            <label class="fld"><span>한 줄 소개</span><textarea id="su-bio" rows="2" placeholder="글자를 칠 때마다 살짝 흔들려요"></textarea></label>
+            <label class="fld"><span>좋아하는 맛</span><span class="sel"><select id="su-flavor"><option>라즈베리</option><option>라임</option><option>살구</option><option>블루베리</option></select></span></label>
+            <button class="btn f-raspberry" type="submit">가입하기</button>
+            <p class="note">이메일을 비우고 가입하기 → 흔들림. 탭 키로 이동 → 살짝 부풂. 맛을 바꾸면 선택칸이 통통 튀어요.</p>
+          </form>
+        </div>
+
+        <div class="group gcard" role="tabpanel" id="pan-step" aria-labelledby="nav-step" data-cat="input" hidden>
+          <div class="ghead"><h3>스테퍼</h3><p class="capi"><code>input[type=number]</code></p></div>
+          <div class="step">
+            <button class="ghost step-b" type="button" data-step="-1" aria-label="수량 1 줄이기">−</button>
+            <input id="st-num" type="number" value="3" min="0" max="99" step="1" inputmode="numeric" aria-label="수량">
+            <button class="ghost step-b" type="button" data-step="1" aria-label="수량 1 늘리기">+</button>
+          </div>
+          <p class="note">값이 올라가면 위로 늘어나고, 내려가면 눌려 앉아요. 숫자를 직접 고쳐도, 위아래 화살표를 눌러도 같아요. 꾹 눌러 빠르게 올리면 한 칸마다가 아니라 맥박처럼 띄엄띄엄 튀어요.</p>
+        </div>
+
+        <div class="group gcard" role="tabpanel" id="pan-spin" aria-labelledby="nav-spin" data-cat="input" hidden>
+          <div class="ghead"><h3>커스텀 스테퍼</h3><p class="capi"><code>[role=spinbutton] · aria-valuenow</code></p></div>
+          <div class="step">
+            <button class="ghost step-b" type="button" data-spin="-1" aria-label="인분 1 줄이기">−</button>
+            <div class="step-v" id="spin" role="spinbutton" tabindex="0" aria-label="인분" aria-valuenow="2" aria-valuemin="1" aria-valuemax="12" aria-valuetext="2인분">2인분</div>
+            <button class="ghost step-b" type="button" data-spin="1" aria-label="인분 1 늘리기">+</button>
+          </div>
+          <p class="note">앱은 aria-valuenow만 바꿔요. 숫자가 어느 쪽으로 움직였는지는 jello가 속성 변화에서 읽어요. 포커스 두고 위아래 화살표도 돼요.</p>
+        </div>
+
+        <div class="group gcard" role="tabpanel" id="pan-srch" aria-labelledby="nav-srch" data-cat="input" hidden>
+          <div class="ghead"><h3>검색</h3><p class="capi"><code>[role=combobox] · [role=listbox] · data-jello-height</code></p></div>
+          <form class="srch" id="srch" role="search">
+            <div class="step">
+              <input id="srch-q" type="search" role="combobox" aria-expanded="false" aria-controls="srch-list" aria-haspopup="listbox" aria-autocomplete="list" aria-label="맛 검색" placeholder="맛 이름" autocomplete="off">
+              <button class="ghost step-b" type="button" id="srch-clear" aria-label="검색어 지우기">×</button>
+            </div>
+            <ul class="lbx srch-list" id="srch-list" role="listbox" aria-label="추천 검색어" data-jello-height></ul>
+          </form>
+          <p class="note">‘말’이나 ‘라’를 쳐 보세요. search도 글자를 치는 입력칸이라 한 글자마다 흔들리고, 지우기는 버튼이라 눌려요.</p>
+          <p class="note">추천 목록에는 <code>data-jello-height</code> 하나만 붙였어요. 앱은 li를 넣고 빼기만 하고, 높이는 jello가 스프링으로 따라와요. 위아래 화살표로 고르고 엔터로 넣고, Esc로 닫아요.</p>
+        </div>
+
+        <div class="group gcard" role="tabpanel" id="pan-slider" aria-labelledby="nav-slider" data-cat="input" hidden>
+          <div class="ghead"><h3>슬라이더</h3><p class="capi"><code>input[type=range] · 놓을 때</code></p></div>
+          <input id="sweet" type="range" min="0" max="100" value="40" aria-label="당도">
+          <p class="note">빠르게 끌다가 놓으면 그 방향으로 밀려났다 돌아와요. 멈추고 놓으면 밀리지 않아요.</p>
+        </div>
+
+        <div class="group gcard" role="tabpanel" id="pan-check" aria-labelledby="nav-check" data-cat="choice" hidden>
+          <div class="ghead"><h3>체크박스 · 라디오</h3><p class="capi"><code>change</code></p></div>
+          <div class="row">
+            <label class="opt"><input id="cb-1" type="checkbox" checked> 알림 받기</label>
+            <label class="opt"><input id="cb-2" type="checkbox"> 뉴스레터</label>
+          </div>
+          <div class="row" role="radiogroup" aria-label="크기">
+            <label class="opt"><input id="rd-1" type="radio" name="size" checked> 작게</label>
+            <label class="opt"><input id="rd-2" type="radio" name="size"> 보통</label>
+            <label class="opt"><input id="rd-3" type="radio" name="size"> 크게</label>
+          </div>
+          <p class="note">켤 때 더 크게, 끌 때 작게 통통 튀어요.</p>
+        </div>
+
+        <div class="group gcard" role="tabpanel" id="pan-switch" aria-labelledby="nav-switch" data-cat="choice" hidden>
+          <div class="ghead"><h3>스위치</h3><p class="capi"><code>[role=switch] · aria-checked</code></p></div>
+          <div class="row">
+            <button class="switch-ui" id="sw-1" role="switch" aria-checked="false" type="button" aria-labelledby="sw-1-label"></button>
+            <span id="sw-1-label" class="sw-text">야간 배송<small>직접 만든 스위치 · aria-checked</small></span>
+          </div>
+          <p class="note">손잡이가 움직이는 건 CSS 전환이고, 스위치 전체가 통통 튀는 건 jello예요. 둘 다 같은 스프링을 써요.</p>
+        </div>
+
+        <div class="group gcard" role="tabpanel" id="pan-chip" aria-labelledby="nav-chip" data-cat="choice" hidden>
+          <div class="ghead"><h3>토글 칩</h3><p class="capi"><code>aria-pressed</code></p></div>
+          <div class="row chips-row" role="group" aria-label="식감">
+            <button class="chip" type="button" aria-pressed="true">말랑</button>
+            <button class="chip" type="button" aria-pressed="false">탱글</button>
+            <button class="chip" type="button" aria-pressed="false">쫀득</button>
+          </div>
+          <p class="note">누르는 반응과 상태가 바뀐 반응이 겹쳐요. 끌 때는 조금 작게 튀어요.</p>
+        </div>
+
+        <div class="group gcard" role="tabpanel" id="pan-seg" aria-labelledby="nav-seg" data-cat="choice" hidden>
+          <div class="ghead"><h3>세그먼트</h3><p class="capi"><code>input[type=radio] · change</code></p></div>
+          <div class="seg" role="radiogroup" aria-label="배송">
+            <label class="seg-i"><input type="radio" name="ship" checked aria-label="일반 배송"><span>일반</span></label>
+            <label class="seg-i"><input type="radio" name="ship" aria-label="새벽 배송"><span>새벽</span></label>
+            <label class="seg-i"><input type="radio" name="ship" aria-label="퀵 배송"><span>퀵</span></label>
+          </div>
+          <p class="note">라디오를 숨기고 칸만 보여요. 좌우 화살표로도 바뀌어요.</p>
+        </div>
+
+        <div class="group gcard" role="tabpanel" id="pan-star" aria-labelledby="nav-star" data-cat="choice" hidden>
+          <div class="ghead"><h3>별점</h3><p class="capi"><code>숨은 input → 보이는 요소</code></p></div>
+          <div class="stars" role="radiogroup" aria-label="별점">
+            <label class="star-i"><input type="radio" name="rate" aria-label="별 1개"><span class="star" aria-hidden="true">★</span></label>
+            <label class="star-i"><input type="radio" name="rate" aria-label="별 2개"><span class="star" aria-hidden="true">★</span></label>
+            <label class="star-i"><input type="radio" name="rate" checked aria-label="별 3개"><span class="star" aria-hidden="true">★</span></label>
+            <label class="star-i"><input type="radio" name="rate" aria-label="별 4개"><span class="star" aria-hidden="true">★</span></label>
+            <label class="star-i"><input type="radio" name="rate" aria-label="별 5개"><span class="star" aria-hidden="true">★</span></label>
+          </div>
+          <p class="note">input이 눈에 안 보이면 바로 옆의 보이는 요소가 대신 움직여요. 누른 별 하나만 튀어요.</p>
+        </div>
+
+        <div class="group gcard" role="tabpanel" id="pan-lbx" aria-labelledby="nav-lbx" data-cat="choice" hidden>
+          <div class="ghead"><h3>리스트박스</h3><p class="capi"><code>[role=option] · aria-selected</code></p></div>
+          <div class="lbx" id="lbx-flavor" role="listbox" aria-label="맛 고르기">
+            <div class="lbx-o" role="option" aria-selected="true" tabindex="0">라즈베리</div>
+            <div class="lbx-o" role="option" aria-selected="false" tabindex="-1">라임</div>
+            <div class="lbx-o" role="option" aria-selected="false" tabindex="-1">살구</div>
+            <div class="lbx-o" role="option" aria-selected="false" tabindex="-1">블루베리</div>
+          </div>
+          <p class="note">aria-selected가 true가 된 항목만 튀어요. 빠진 쪽은 조용해요. 위아래 화살표로도 옮겨요.</p>
+        </div>
+
+        <div class="group gcard" role="tabpanel" id="pan-tabs" aria-labelledby="nav-tabs" data-cat="nav" hidden>
+          <div class="ghead"><h3>탭</h3><p class="capi"><code>[role=tab] · aria-selected · data-jello-indicator</code></p></div>
+          <div class="tabs" role="tablist" aria-label="젤리 정보">
+            <span class="tab-ind" data-jello-indicator aria-hidden="true"></span>
+            <button class="tab" role="tab" id="tab-a" aria-selected="true" aria-controls="tp-a" type="button">맛</button>
+            <button class="tab" role="tab" id="tab-b" aria-selected="false" aria-controls="tp-b" tabindex="-1" type="button">식감</button>
+            <button class="tab" role="tab" id="tab-c" aria-selected="false" aria-controls="tp-c" tabindex="-1" type="button">칼로리</button>
+          </div>
+          <p class="tabpanel" role="tabpanel" id="tp-a" aria-labelledby="tab-a">라즈베리, 라임, 살구, 블루베리 네 가지예요.</p>
+          <p class="tabpanel" role="tabpanel" id="tp-b" aria-labelledby="tab-b" hidden>젤라틴 2%면 말랑, 4%면 탱글해요.</p>
+          <p class="tabpanel" role="tabpanel" id="tp-c" aria-labelledby="tab-c" hidden>한 컵에 약 70kcal예요.</p>
+          <p class="note">고른 탭 뒤의 판이 미끄러져 따라와요. 앱은 aria-selected만 바꾸고, 판에는 data-jello-indicator 하나만 붙였어요. 왼쪽 목록도 같은 코드예요.</p>
+        </div>
+
+        <div class="group gcard" role="tabpanel" id="pan-vtabs" aria-labelledby="nav-vtabs" data-cat="nav" hidden>
+          <div class="ghead"><h3>세로 탭</h3><p class="capi"><code>aria-orientation="vertical"</code></p></div>
+          <div class="vtabs">
+            <div class="tabs tabs-v" role="tablist" aria-orientation="vertical" aria-label="보관법">
+              <span class="tab-ind" data-jello-indicator aria-hidden="true"></span>
+              <button class="tab" role="tab" id="vtab-a" aria-selected="true" aria-controls="vtp-a" type="button">냉장</button>
+              <button class="tab" role="tab" id="vtab-b" aria-selected="false" aria-controls="vtp-b" tabindex="-1" type="button">냉동</button>
+              <button class="tab" role="tab" id="vtab-c" aria-selected="false" aria-controls="vtp-c" tabindex="-1" type="button">실온</button>
+            </div>
+            <div>
+              <p class="tabpanel" role="tabpanel" id="vtp-a" aria-labelledby="vtab-a">4℃에서 사흘쯤 가요. 물이 조금 빠지면서 탱글해져요.</p>
+              <p class="tabpanel" role="tabpanel" id="vtp-b" aria-labelledby="vtab-b" hidden>얼리면 젤라틴 그물이 끊어져서, 녹은 뒤엔 흐물흐물해져요.</p>
+              <p class="tabpanel" role="tabpanel" id="vtp-c" aria-labelledby="vtab-c" hidden>28℃가 넘으면 녹아요. 젤라틴은 체온 근처에서 풀려요.</p>
+            </div>
+          </div>
+          <p class="note">위아래 화살표로 옮겨요. 가로일 때는 넓이를, 세로일 때는 높이를 탭에 맞춰요.</p>
+        </div>
+
+        <div class="group gcard" role="tabpanel" id="pan-acc" aria-labelledby="nav-acc" data-cat="nav" hidden>
+          <div class="ghead"><h3>아코디언</h3><p class="capi"><code>&lt;details&gt;</code></p></div>
+          <div class="acc">
+            <details name="jelly-faq"><summary>젤리는 왜 흔들릴까요?</summary><p>젤라틴 그물 속에 물이 갇혀 있어서, 눌렸다 놓이면 탄성으로 돌아가며 몇 번 출렁여요. 스프링과 같은 원리예요.</p></details>
+            <details name="jelly-faq"><summary>냉장고에 오래 두면요?</summary><p>물이 빠져나와 단단해지고 덜 흔들려요. bounce를 낮춘 firm 프리셋과 비슷해요.</p></details>
+            <details name="jelly-faq"><summary>몇 번까지 출렁여요?</summary><p>bounce 0.65면 두 번 정도 눈에 보이게 출렁이고, 0.75면 서너 번이에요. 아래 직접 조절하기에서 바꿔 볼 수 있어요.</p></details>
+          </div>
+          <p class="note">제목은 가만히 있고 내용만 떨어지듯 열려요. 세 개는 name으로 묶여 한 번에 하나만 열려요.</p>
+        </div>
+
+        <div class="group gcard" role="tabpanel" id="pan-acc2" aria-labelledby="nav-acc2" data-cat="nav" hidden>
+          <div class="ghead"><h3>커스텀 아코디언</h3><p class="capi"><code>[aria-expanded][aria-controls]</code></p></div>
+          <div class="acc">
+            <div class="acc-item">
+              <button class="acc-head" type="button" id="acc-btn" aria-expanded="false" aria-controls="acc-panel">직접 만든 아코디언</button>
+              <div class="acc-panel" id="acc-panel" role="region" aria-labelledby="acc-btn" hidden><p>aria-expanded와 hidden만 바꾸면 aria-controls로 연결된 패널이 떨어지듯 열려요. details와 똑같이 움직여요.</p></div>
+            </div>
+          </div>
+          <p class="note">aria-haspopup이 붙어 있으면 아코디언이 아니라 메뉴로 보고, 패널 대신 버튼이 살짝 튀어요. 위의 검색 입력칸이 그 경우예요.</p>
+        </div>
+
+        <div class="group gcard" role="tabpanel" id="pan-pager" aria-labelledby="nav-pager" data-cat="nav" hidden>
+          <div class="ghead"><h3>페이지네이션</h3><p class="capi"><code>button · aria-current="page"</code></p></div>
+          <nav class="pager" id="pager" aria-label="페이지">
+            <button class="ghost" type="button" data-page="-1" aria-label="이전 페이지">‹</button>
+            <button class="chip" type="button" aria-current="page">1</button>
+            <button class="chip" type="button">2</button>
+            <button class="chip" type="button">3</button>
+            <button class="ghost" type="button" data-page="1" aria-label="다음 페이지">›</button>
+          </nav>
+          <p class="note">jello는 aria-current를 보지 않아요. 여기 움직임은 버튼을 누른 반응 하나예요. 화살표로 옮긴 쪽은 조용해요.</p>
+        </div>
+
+        <div class="group gcard" role="tabpanel" id="pan-menu" aria-labelledby="nav-menu" data-cat="overlay" hidden>
+          <div class="ghead"><h3>메뉴</h3><p class="capi"><code>[popover]</code></p></div>
+          <div class="row"><button class="chip" type="button" popovertarget="pop-menu">메뉴 열기</button></div>
+          <div class="menu" popover id="pop-menu">
+            <button type="button" popovertarget="pop-menu" popovertargetaction="hide">링크 복사</button>
+            <button type="button" popovertarget="pop-menu" popovertargetaction="hide">공유하기</button>
+            <button type="button" popovertarget="pop-menu" popovertargetaction="hide">신고하기</button>
+          </div>
+          <p class="note">팝오버가 열릴 때 0.85 크기에서 튀어나와요. 안의 항목은 각각 눌려요.</p>
+          <p class="note">팝오버는 화면 맨 위 층에 떠서 페이지 좌표를 모르기 때문에, 버튼 아래 자리는 앱이 잡아 줘요. 아래가 좁으면 위로 뒤집혀요.</p>
+        </div>
+
+        <div class="group gcard" role="tabpanel" id="pan-dlg" aria-labelledby="nav-dlg" data-cat="overlay" hidden>
+          <div class="ghead"><h3>대화상자</h3><p class="capi"><code>&lt;dialog&gt;</code></p></div>
+          <div class="row"><button class="chip" type="button" id="open-dialog">대화상자 열기</button></div>
+          <dialog class="dlg" id="dlg" aria-labelledby="dlg-title">
+            <h3 id="dlg-title">젤리를 비울까요?</h3>
+            <p>장바구니에 담긴 젤리 3개가 사라져요.</p>
+            <div class="actions">
+              <button class="ghost" type="button" id="dlg-cancel">취소</button>
+              <button class="btn f-raspberry" type="button" id="dlg-ok">비우기</button>
+            </div>
+          </dialog>
+          <p class="note">open이 붙는 순간 0.9 크기에서 튀어나와요. 비우기를 누르면 토스트까지 이어져요.</p>
+        </div>
+
+        <div class="group gcard" role="tabpanel" id="pan-tip" aria-labelledby="nav-tip" data-cat="overlay" hidden>
+          <div class="ghead"><h3>툴팁</h3><p class="capi"><code>[popover] · role=tooltip</code></p></div>
+          <div class="row"><button class="chip" type="button" id="tip-btn" popovertarget="tip" aria-describedby="tip">젤라틴이 뭐예요?</button></div>
+          <div class="menu tip" popover id="tip" role="tooltip">콜라겐에서 뽑은 단백질이에요. 물을 가두는 그물을 만들어서 젤리가 흔들려요.</div>
+          <p class="note">메뉴와 같은 팝오버 경로예요. 자리를 잡는 코드도 메뉴와 같은 한 줄을 써요. 마우스를 올려 띄우고 싶으면 앱에서 직접 열고 닫아야 해요.</p>
+        </div>
+
+        <div class="group gcard" role="tabpanel" id="pan-toast" aria-labelledby="nav-toast" data-cat="feedback" hidden>
+          <div class="ghead"><h3>토스트</h3><p class="capi"><code>data-jello-enter</code></p></div>
+          <div class="row"><button class="chip" type="button" id="make-toast">토스트 띄우기</button></div>
+          <p class="note">DOM에 추가될 때 적어 둔 크기에서 튀어나와요. 화면 아래에 떠요.</p>
+        </div>
+
+        <div class="group gcard" role="tabpanel" id="pan-badge" aria-labelledby="nav-badge" data-cat="feedback" hidden>
+          <div class="ghead"><h3>배지</h3><p class="capi"><code>pop() · hop()</code></p></div>
+          <div class="row">
+            <div class="cart" id="bell" aria-label="알림">
+              <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 4.5a6.5 6.5 0 0 0-6.5 6.5c0 5.5-2.5 6.5-2.5 9h18c0-2.5-2.5-3.5-2.5-9A6.5 6.5 0 0 0 16 4.5Z"/><path d="M13 24.5a3 3 0 0 0 6 0"/></svg>
+              <span class="badge" id="bell-badge" hidden>0</span>
+            </div>
+            <button class="btn f-raspberry" id="bell-add" type="button">알림 하나</button>
+            <button class="ghost" id="bell-clear" type="button">비우기</button>
+          </div>
+          <p class="note">속성이 아니라 코드로 부르는 쪽이에요. 처음 나타날 때 pop({ from: 0 }), 숫자가 바뀔 때 pop(), 종은 hop()이에요.</p>
+        </div>
+
+        <div class="group gcard" role="tabpanel" id="pan-err" aria-labelledby="nav-err" data-cat="feedback" hidden>
+          <div class="ghead"><h3>오류</h3><p class="capi"><code>invalid · aria-invalid</code></p></div>
+          <form class="fields" id="err-form">
+            <label class="fld"><span>쿠폰 코드 (영문 다섯 글자)</span><input id="err-code" type="text" required pattern="[A-Za-z]{5}" placeholder="JELLY" autocomplete="off" aria-describedby="err-msg"></label>
+            <div class="row">
+              <button class="btn f-raspberry" type="submit">확인</button>
+              <button class="ghost" id="err-mark" type="button">aria-invalid 붙이기</button>
+            </div>
+            <p class="note" id="err-msg" role="status"></p>
+          </form>
+          <p class="note">빈칸이나 다섯 글자가 아니면 브라우저가 invalid를 띄우고, 그때 흔들려요. 앱이 aria-invalid="true"를 붙여도 같아요.</p>
+        </div>
       </div>
     </div>
     <div class="toasts" id="toasts" aria-live="polite"></div>
@@ -1007,9 +1071,10 @@ motionFor(el).update((c) =&gt; c.kick('tilt', impulse(s, 6), s))</code></pre>
       t.addEventListener('click', () => selectTab(t))
       t.addEventListener('keydown', (e) => {
         const d = e.key === (vertical ? 'ArrowDown' : 'ArrowRight') ? 1 : e.key === (vertical ? 'ArrowUp' : 'ArrowLeft') ? -1 : 0
-        if (!d) return
+        const to = e.key === 'Home' ? 0 : e.key === 'End' ? tabs.length - 1 : d ? (i + d + tabs.length) % tabs.length : -1
+        if (to < 0) return
         e.preventDefault()
-        selectTab(tabs[(i + d + tabs.length) % tabs.length], true)
+        selectTab(tabs[to], true)
       })
     })
   }
@@ -1040,21 +1105,22 @@ motionFor(el).update((c) =&gt; c.kick('tilt', impulse(s, 6), s))</code></pre>
   $('#card-pivot').addEventListener('change', (e) => $('#card').setAttribute('data-jello-pivot', e.target.checked ? 'pointer' : 'origin'))
   $('#card-dent').addEventListener('change', (e) => $('#card').setAttribute('data-jello-dent', e.target.checked ? 'on' : 'off'))
 
-  /* ---------------- gallery filter: the chips are a jello demo themselves (aria-pressed) */
-  const gcards = $$('.gcard')
-  const filters = $$('[data-filter]')
-  function showCat(cat) {
-    let shown = 0
-    for (const c of gcards) {
-      const on = cat === 'all' || c.dataset.cat === cat
-      c.hidden = !on
-      if (on) shown += 1
-    }
-    for (const b of filters) b.setAttribute('aria-pressed', String(b.dataset.filter === cat))
-    $('#gal-count').textContent = `${shown}개 보임`
+  /* ---------------- popovers: the top layer has no page coordinates, so park each
+     one under the button that opened it. Its own size comes from offsetWidth, not a
+     rect: jello is scaling it in as this runs and a rect would read the scaled box. */
+  for (const btn of $$('[popovertarget]')) {
+    const pop = document.getElementById(btn.getAttribute('popovertarget'))
+    if (!pop?.hasAttribute('popover') || pop.contains(btn) || btn.getAttribute('popovertargetaction') === 'hide') continue
+    pop.addEventListener('toggle', (e) => {
+      if (e.newState !== 'open') return
+      const b = btn.getBoundingClientRect()
+      const w = pop.offsetWidth, h = pop.offsetHeight
+      const below = b.bottom + 8
+      const flip = below + h > innerHeight - 8 && b.top - 8 - h > 8 // 아래가 좁으면 위로
+      pop.style.top = `${flip ? b.top - 8 - h : below}px`
+      pop.style.left = `${Math.max(8, Math.min(b.left, innerWidth - w - 8))}px`
+    })
   }
-  for (const b of filters) b.addEventListener('click', () => showCat(b.dataset.filter))
-  showCat('all')
 
   /* ---------------- stepper: the app moves the value, jello reads which way it went */
   for (const b of $$('[data-step]')) {
@@ -1084,8 +1150,63 @@ motionFor(el).update((c) =&gt; c.kick('tilt', impulse(s, 6), s))</code></pre>
     spinBy(d)
   })
 
-  /* ---------------- search: clearing is a button press, the field wiggles on input */
+  /* ---------------- search: clearing is a button press, the field wiggles on input.
+     The suggestions are a combobox: the app owns aria-expanded, aria-activedescendant
+     and the li elements; the list's height is jello's (data-jello-height). */
   const query = $('#srch-q')
+  const sugg = $('#srch-list')
+  const TERMS = ['말랑말랑', '탱글탱글', '쫀득쫀득', '라즈베리', '라임', '살구', '블루베리', '복숭아', '포도', '젤라틴', '한천', '푸딩', '곤약', '구미']
+  let active = -1 // 키보드로 짚고 있는 항목, 없으면 -1
+  const sOpts = () => Array.from(sugg.children)
+  function mark(i) {
+    const list = sOpts()
+    active = i
+    list.forEach((o, n) => o.setAttribute('aria-selected', String(n === i)))
+    if (i < 0) query.removeAttribute('aria-activedescendant')
+    else query.setAttribute('aria-activedescendant', list[i].id)
+  }
+  function closeSugg() {
+    sugg.replaceChildren() // 개수가 0으로 줄면 높이도 0으로 접혀요
+    query.setAttribute('aria-expanded', 'false')
+    mark(-1)
+  }
+  function suggest() {
+    const q = query.value.trim()
+    const hits = q ? TERMS.filter((t) => t.includes(q)).slice(0, 6) : []
+    if (!hits.length) return closeSugg()
+    sugg.replaceChildren(...hits.map((t, i) => {
+      const li = document.createElement('li')
+      li.className = 'lbx-o'
+      li.id = `srch-opt-${i}`
+      li.setAttribute('role', 'option')
+      li.setAttribute('aria-selected', 'false')
+      li.textContent = t
+      return li
+    }))
+    query.setAttribute('aria-expanded', 'true')
+    active = -1
+  }
+  const accept = (opt) => {
+    if (!opt) return
+    query.value = opt.textContent
+    closeSugg()
+    query.focus()
+  }
+  query.addEventListener('input', suggest)
+  query.addEventListener('keydown', (e) => {
+    const open = query.getAttribute('aria-expanded') === 'true'
+    if (e.key === 'Escape') return closeSugg()
+    if (e.key === 'Enter' && open && active >= 0) { e.preventDefault(); return accept(sOpts()[active]) }
+    const d = e.key === 'ArrowDown' ? 1 : e.key === 'ArrowUp' ? -1 : 0
+    if (!d) return
+    e.preventDefault()
+    if (!open) return suggest()
+    const n = sOpts().length
+    if (n) mark(((active < 0 && d < 0 ? n : active) + d + n) % n)
+  })
+  sugg.addEventListener('pointerdown', (e) => e.preventDefault()) // 포커스를 입력칸에 둔 채로 고르기
+  sugg.addEventListener('click', (e) => accept(e.target.closest('[role="option"]')))
+  $('#srch').addEventListener('focusout', (e) => { if (!$('#srch').contains(e.relatedTarget)) closeSugg() })
   $('#srch').addEventListener('submit', (e) => e.preventDefault())
   $('#srch-clear').addEventListener('click', () => {
     query.value = ''
@@ -1094,7 +1215,7 @@ motionFor(el).update((c) =&gt; c.kick('tilt', impulse(s, 6), s))</code></pre>
   })
 
   /* ---------------- listbox: one option selected at a time */
-  const opts = $$('[role="option"]')
+  const opts = $$('#lbx-flavor [role="option"]')
   const pick = (opt, focus) => {
     for (const o of opts) {
       o.setAttribute('aria-selected', String(o === opt))
