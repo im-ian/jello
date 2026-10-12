@@ -63,7 +63,11 @@ function play(el: HTMLElement, f: Fold) {
     const ts = t + ((end - t) * i) / count
     let p = i === count && end < t + MAX_PLAN ? f.p.target : f.p.at(ts)[0]
     p = Math.max(0, p) // never shorter than closed: that would cut into the title
-    box.push({ height: `${(f.from + (f.to - f.from) * p).toFixed(2)}px`, overflow: 'hidden', boxSizing: 'border-box' })
+    // ...and never negative: the spring overshoots its target, so shrinking to a
+    // small height takes the curve below zero. CSS rejects the length and the
+    // browser drops the whole keyframe, leaving the animation broken.
+    const h = Math.max(0, f.from + (f.to - f.from) * p)
+    box.push({ height: `${h.toFixed(2)}px`, overflow: 'hidden', boxSizing: 'border-box' })
     kid.push({ translate: `0 ${(-drop * (1 - p)).toFixed(2)}px`, opacity: Number(Math.min(1, p / 0.35).toFixed(3)) })
   }
   const opts: KeyframeAnimationOptions = { duration: Math.max(1, (end - t) * 1000), easing: 'linear', fill: 'both' }
@@ -174,4 +178,57 @@ export function dropOpen(panel: HTMLElement) {
 
 function fadeIn(kids: HTMLElement[]) {
   for (const k of kids) k.animate?.([{ opacity: 0 }, { opacity: 1 }], { duration: 180, easing: 'ease-out' })
+}
+
+/* ------------------------------------------- list height (data-jello-height) */
+
+const HEIGHT = '[data-jello-height]'
+
+/**
+ * A container's natural height from *before* its last child change: a
+ * MutationObserver callback runs after the DOM is already updated, so
+ * measuring there gives the new height, not the one to spring from.
+ *
+ * ponytail: goes stale if something else reflows the container between two
+ * child changes (a resize, a late webfont). A ResizeObserver would notice, but
+ * it also fires for the height animation below, so it needs the same "only
+ * when settled" guard this does — more moving parts for the same answer.
+ */
+const natural = new WeakMap<HTMLElement, number>()
+
+/** Measure the containers in `root` so their first child change has a height to spring from. */
+export function seedHeights(root: Document | Element) {
+  const els = Array.from(root.querySelectorAll<HTMLElement>(HEIGHT))
+  if (root instanceof HTMLElement && root.matches(HEIGHT)) els.push(root)
+  for (const el of els) if (!natural.has(el)) natural.set(el, el.offsetHeight)
+}
+
+/**
+ * Children were added to or removed from `parent`: spring its height from the
+ * one it had to the one it has now, with the accordion's spring. Other
+ * mutations pass straight through.
+ */
+export function heightChanged(parent: Node) {
+  if (!(parent instanceof HTMLElement) || !parent.matches(HEIGHT)) return
+  const t = now()
+  const old = folds.get(parent)
+  // Mid-animation: carry on from the height on screen, and cancel before
+  // measuring — our own `height` keyframes are layout and would read back as
+  // the natural height.
+  const from = old
+    ? old.from + (old.to - old.from) * Math.max(0, old.p.at(t)[0])
+    : (natural.get(parent) ?? parent.offsetHeight)
+  if (old) for (const a of old.anims) a.cancel()
+  const to = parent.offsetHeight
+  natural.set(parent, to)
+  if (to === from || prefersReducedMotion()) {
+    folds.delete(parent)
+    return
+  }
+  // No kids: they are already in place, only the box grows. An inserted child
+  // springs in on its own with [data-jello-enter].
+  const f = start(parent, from, to, [])
+  f.done = () => natural.set(parent, parent.offsetHeight) // content may have reflowed on the way
+  f.p.to(t, 1, DROP)
+  play(parent, f)
 }

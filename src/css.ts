@@ -1,4 +1,4 @@
-import { settleTime, solve, spring, type SpringConfig } from './spring'
+import { settleTime, solve, spring, type Spring, type SpringConfig } from './spring'
 
 export interface SpringEasing {
   /** A CSS `linear()` easing that traces the spring's step response. */
@@ -20,8 +20,8 @@ export interface SpringEasing {
  *
  * @param tolerance max vertical error (in progress units) when dropping points
  */
-export function springEasing(config: SpringConfig = {}, tolerance = 0.002): SpringEasing {
-  const s = spring(config)
+export function springEasing(config: SpringConfig | Spring = {}, tolerance = 0.002): SpringEasing {
+  const s = 'omega' in config ? config : spring(config)
   const T = Math.max(settleTime(s, -1, 0, 1e-3, 1e-2, 5), 0.001)
   const N = 240
   const pts: Array<[number, number]> = []

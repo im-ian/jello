@@ -1,12 +1,13 @@
 <p align="center">
-  <img src="assets/logo.png" alt="jello" width="320">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/wordmark-dark.svg">
+    <img src="assets/wordmark.svg" alt="jello" width="220">
+  </picture>
 </p>
 
-# jello
+<p align="center">누른 자리가 말랑하게 들어가고, 놓으면 출렁이는 UI 피드백 라이브러리.</p>
 
-누른 자리가 말랑하게 들어가고, 놓으면 출렁이는 UI 피드백 라이브러리.
-
-**데모**: https://im-ian.github.io/jello/
+<p align="center"><a href="https://im-ian.github.io/jello/"><b>데모 보기</b></a></p>
 
 ## 설치
 
@@ -53,6 +54,10 @@ React·Vue·Svelte도 같습니다. `auto()`를 한 번 부르고 컴포넌트�
 | `data-jello-pivot` | `pointer`(기본) · `origin` | 찌그러지는 기준점: 누른 자리 / CSS `transform-origin` |
 | `data-jello-dent` | `off` | 누른 자리 보조개 끄기 |
 | `data-jello-enter` | 숫자(선택, 기본 0.6) | DOM에 추가될 때 이 크기에서 튀어나옴 |
+| `data-jello-indicator` | 없음 | `[role=tablist]` 안의 탭 인디케이터. 선택된 탭으로 미끄러짐 |
+| `data-jello-height` | 없음 | 자식이 늘거나 줄면 높이가 아코디언처럼 늘었다 수축 |
+
+`data-jello-indicator`는 tablist의 `aria-orientation`을 따릅니다. 가로면 탭의 넓이에, `vertical`이면 높이에 맞춰요.
 
 컨트롤이 들어 있는 요소에 붙이면 그 요소는 눌리지 않고 안의 컨트롤만 반응합니다. 컨트롤이 없는 요소(카드 등)는 그 자체가 눌립니다.
 
@@ -60,14 +65,17 @@ React·Vue·Svelte도 같습니다. `auto()`를 한 번 부르고 컴포넌트�
 
 | 종류 | 요소 | 동작 |
 | --- | --- | --- |
-| 누르기 | `button`, `a[href]`, `[role=button\|tab\|menuitem\|option]`, 카드 | 누른 자리 기준으로 찌그러졌다 출렁, 보조개 |
+| 누르기 | `button`, `a[href]`, `[role=button\|tab]`, 카드 | 누른 자리 기준으로 찌그러졌다 출렁, 보조개 |
+| 행 | `[role=option\|menuitem\|treeitem]` | 같은 누르기지만 약하게. 리스트 안의 납작한 행이라 기울기·보조개 없음 |
 | 입력 | `input`, `textarea`, `select`, `contenteditable`, `[role=textbox\|combobox]` | 키보드 포커스 시 부풂, 입력할 때 흔들림, `invalid` 시 흔들기 |
+| 스테퍼 | `input[type=number]`, `[role=spinbutton]` | 값이 오르면 위로 늘어나고, 내리면 아래로 눌림 |
 | 토글 | `checkbox`, `radio`, `[role=switch\|checkbox\|radio]` | 체크 상태가 바뀌면 통통 |
+| 탭 | `[role=tablist]` + `[data-jello-indicator]` | 선택된 탭으로 인디케이터가 미끄러지고 도착할 때 찌그러짐. 가로·세로 모두 |
 | 슬라이더 | `input[type=range]`, `[role=slider]` | 손을 떼면 끌던 방향으로 밀렸다 돌아옴 |
 | 아코디언 | `<details>`, `[aria-expanded][aria-controls]` | 제목은 고정, 내용 높이가 늘었다 탄성으로 수축 |
 | 겹쳐 뜨는 요소 | `<dialog>`, `[popover]`, `[data-jello-enter]` | 열리거나 추가될 때 튀어나옴 |
 
-`aria-checked`, `aria-pressed`, `aria-selected`, `aria-expanded`, `aria-invalid`, `aria-valuenow`가 바뀌어도 반응합니다.
+`aria-checked`, `aria-pressed`, `aria-selected`, `aria-expanded`, `aria-invalid`, `aria-valuenow`가 바뀌어도 반응합니다. `aria-valuenow`는 `[role=slider]`와 `[role=spinbutton]`에서만 반응합니다.
 
 ## API
 
@@ -98,7 +106,7 @@ h.destroy()
 | `preset` | `'wobbly'` | `firm` · `gentle` · `wobbly` · `bouncy` |
 | `squash` | `0.1` | 누를 때 찌그러지는 정도 |
 | `depth` | `0.05` | 누를 때 작아지는 정도 |
-| `tilt` | `3` | 누른 쪽으로 기우는 최대 각도(°) |
+| `tilt` | `3` | 누른 쪽으로 기우는 최대 각도(°). 가로로 긴 요소는 모서리가 6px보다 더 들리지 않도록 각도를 줄입니다 |
 | `pivot` | `'pointer'` | `'pointer'` · `'origin'` |
 | `dent` | `true` | 보조개 |
 | `press` | `{ duration: 0.2, bounce: 0.25 }` | 누를 때 스프링 |
@@ -131,6 +139,50 @@ el.style.transition = `scale ${e}`                // "976ms linear(…)"
 ```
 
 `duration`: 체감 속도(초). `bounce`: -1 ~ 1 (0 = 튀지 않음).
+
+### `tokens(tree, options?) → theme`
+
+디자인 토큰을 CSS 변수로 내보냅니다. 색·간격 같은 값은 그대로 지나가고, **스프링은 값이 됩니다**.
+
+```js
+import { spring, tokens } from 'jello'
+
+const theme = tokens({
+  color: { bg: '#f6f1f5', accent: '#d2234c' },
+  motion: { press: spring({ duration: 0.5, bounce: 0.6 }) },
+}, { prefix: 'app', dark: { color: { bg: '#1a121e' } } })
+
+theme.apply()              // <style>를 넣습니다. 지우는 함수를 돌려줍니다
+theme.var('color.bg')      // "var(--app-color-bg)"
+```
+
+```css
+:root {
+  --app-color-bg: #f6f1f5;
+  --app-color-accent: #d2234c;
+  --app-motion-press: 976ms linear(…);   /* transition 축약형 */
+  --app-motion-press-duration: 976ms;
+  --app-motion-press-easing: linear(…);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --app-color-bg: #1a121e; }
+}
+:root[data-theme="dark"] { --app-color-bg: #1a121e; }
+```
+
+같은 곡선을 JS 애니메이션과 손으로 쓴 transition이 함께 씁니다.
+
+```css
+.card { transition: scale var(--app-motion-press); }
+```
+
+| 옵션 | 기본값 | 설명 |
+| --- | --- | --- |
+| `prefix` | 없음 | 모든 변수 앞에 `--<prefix>-` |
+| `dark` | 없음 | 다크 모드에서 덮어쓸 토큰. 적은 것만 다시 선언됩니다 |
+| `selector` | `':root'` | 변수를 선언할 위치 |
+
+중첩이 이름이 됩니다: `{ color: { bgSoft } }` → `--color-bg-soft`. `spring()`이 돌려준 값만 스프링으로 봅니다 — `{ duration, bounce }`는 숫자 토큰 두 개와 구분할 수 없으니 `spring()`을 먼저 씌우세요.
 
 ### `configure(options)`
 
@@ -185,3 +237,12 @@ npm test
 npm run build       # dist/
 npm run site        # site/ (데모)
 ```
+
+데모 미리보기:
+
+```bash
+npm run preview     # 빌드 후 http://127.0.0.1:4173 — 배포본과 같은 구성
+npm run playground  # playground/dist/index.html — 한 파일, 브라우저로 바로 열기
+```
+
+`site/`는 라이브러리를 별도 파일로 불러오므로 `file://`로 열면 안 되고 `preview`가 필요합니다. `playground`는 번들을 끼워 넣은 한 파일이라 그냥 열어도 됩니다.

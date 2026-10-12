@@ -201,6 +201,30 @@ describe('press / release (WAAPI driver)', () => {
     expect(anims).toHaveLength(2)
     expect(rotateOf(anims[1]!.keyframes.at(-1)!)).toBeCloseTo(0, 2)
   })
+
+  it('caps how far the corner lifts, so a wide element does not heave', () => {
+    const wide = (w: number) => {
+      const made = fakeEl()
+      Object.defineProperty(made.el, 'offsetWidth', { value: w, configurable: true })
+      made.el.getBoundingClientRect = () =>
+        ({ left: 0, top: 0, width: w, height: 50, right: w, bottom: 50, x: 0, y: 0 }) as DOMRect
+      jello(made.el)
+      return made
+    }
+    const tilt = (a: FakeAnim) => rotateOf(a.keyframes.at(-1)!)
+    const lift = (a: FakeAnim, w: number) => (w / 2) * Math.sin((tilt(a) * Math.PI) / 180)
+
+    const btn = wide(94)
+    const card = wide(800)
+    down(btn.el, 81, 94, 25) // the right edge of each: full lean
+    down(card.el, 82, 800, 25)
+    expect(tilt(btn.anims[0]!)).toBeCloseTo(3, 2) // button-sized: wobbly's 3°, untouched
+    expect(lift(btn.anims[0]!, 94)).toBeCloseTo(2.46, 1)
+    expect(tilt(card.anims[0]!)).toBeCloseTo(0.86, 2) // 800px: asin(6 / 400)
+    expect(lift(card.anims[0]!, 800)).toBeCloseTo(6, 1) // the lift is capped, so the angle gives way
+    up(81)
+    up(82)
+  })
 })
 
 describe('deforms around the press point', () => {
@@ -446,6 +470,31 @@ describe('components', () => {
     stop()
   })
 
+  it('list rows get a press meant for a row, buttons keep theirs', async () => {
+    const stop = auto()
+    const box = container()
+    box.setAttribute('role', 'listbox')
+    const { el: row, anims: rowAnims } = fakeEl('div', { role: 'option', 'aria-selected': 'false' }, box)
+    const { el: btn, anims: btnAnims } = fakeEl('button', {}, box)
+    const peakSx = (a: FakeAnim) => Math.max(...a.keyframes.map((k) => scaleOf(k)[0]))
+
+    down(row, 71, 170, 25) // 85% along a 200px-wide row
+    up(71)
+    row.setAttribute('aria-selected', 'true') // and the app selects it
+    await tick()
+    expect(rowAnims.every((a) => a.keyframes.every((k) => k.rotate === undefined))).toBe(true) // no tilt
+    expect(row.querySelector('[data-jello-dent]')).toBeNull() // no dimple
+    expect(Math.max(...rowAnims.map(peakSx))).toBeLessThan(1.03) // never pushes out of the list
+    expect(scaleOf(rowAnims[0]!.keyframes.at(-1)!)[1]).toBeCloseTo(0.98 * 0.975, 3) // still reacts
+
+    down(btn, 72, 170, 25)
+    expect(rotateOf(btnAnims[0]!.keyframes.at(-1)!)).toBeCloseTo(2.1, 2) // wobbly tilt, unchanged
+    expect(scaleOf(btnAnims[0]!.keyframes.at(-1)!)[0]).toBeCloseTo(0.95 / 0.9, 3)
+    expect(btn.querySelector('[data-jello-dent]')).not.toBeNull()
+    up(72)
+    stop()
+  })
+
   it('range sliders are not squashed while dragging', () => {
     const stop = auto()
     const f = form()
@@ -658,6 +707,138 @@ describe('slider momentum', () => {
   })
 })
 
+describe('stepper', () => {
+  const tys = (a: FakeAnim) => a.keyframes.map((k) => stateOf(k).ty)
+
+  it('number input: pressed like a field, lifted when the value goes up, dropped when it goes down', () => {
+    const stop = auto()
+    const { el, anims } = fakeEl('input', { type: 'number', value: '3' }, container())
+    down(el, 61)
+    expect(scaleOf(anims.at(-1)!.keyframes.at(-1)!)[1]).toBeCloseTo(0.98 * 0.975, 3) // not a button press
+    up(61)
+    clock += 2000
+    setValue(el, 4) // the value attribute still says 3, so the first step counts
+    expect(Math.min(...tys(anims.at(-1)!))).toBeLessThan(-1)
+    clock += 2000
+    setValue(el, 3)
+    expect(Math.max(...tys(anims.at(-1)!))).toBeGreaterThan(1)
+    stop()
+  })
+
+  it('number input: an unchanged or non-numeric value does not move it', () => {
+    const stop = auto()
+    const { el, anims } = fakeEl('input', { type: 'number', value: '3' }, container())
+    setValue(el, 3)
+    expect(anims).toHaveLength(0)
+    clock += 2000
+    ;(el as HTMLInputElement).value = 'x'
+    el.dispatchEvent(new Event('input', { bubbles: true }))
+    expect(anims).toHaveLength(0)
+    clock += 2000
+    setValue(el, 4)
+    expect(Math.min(...tys(anims.at(-1)!))).toBeLessThan(-1) // a NaN would have stuck to the channel for good
+    stop()
+  })
+
+  it('aria-valuenow: a spinbutton is bumped, a slider still gets its momentum, a progressbar nothing', async () => {
+    const stop = auto()
+    const c = container()
+    const attrs = { 'aria-valuemin': '0', 'aria-valuemax': '10', 'aria-valuenow': '5' }
+    const { el: spin, anims: spinAnims } = fakeEl('div', { role: 'spinbutton', ...attrs }, c)
+    const { el: slider, anims: sliderAnims } = fakeEl('div', { role: 'slider', ...attrs }, c)
+    const { el: bar, anims: barAnims } = fakeEl('div', { role: 'progressbar', ...attrs }, c)
+    clock += 16
+    for (const el of [spin, slider, bar]) el.setAttribute('aria-valuenow', '7')
+    await tick()
+    expect(Math.min(...tys(spinAnims.at(-1)!))).toBeLessThan(-1) // straight away, no waiting for a stop
+    expect(barAnims).toHaveLength(0)
+    await new Promise((r) => setTimeout(r, 120))
+    expect(Math.max(...sliderAnims[0]!.keyframes.map((k) => translateOf(k)[0]))).toBeGreaterThan(1)
+    stop()
+  })
+})
+
+describe('tab indicator', () => {
+  /**
+   * A tablist whose layout we fake: tabs laid end to end along the track, and
+   * an indicator CSS left sitting on the first one.
+   */
+  function tablist(sizes = [60, 80, 100], vertical = false) {
+    const list = container()
+    list.setAttribute('role', 'tablist')
+    if (vertical) list.setAttribute('aria-orientation', 'vertical')
+    const lay = (el: Element, offset: number, size: number) => {
+      Object.defineProperty(el, vertical ? 'offsetTop' : 'offsetLeft', { value: offset, configurable: true })
+      Object.defineProperty(el, vertical ? 'offsetHeight' : 'offsetWidth', { value: size, configurable: true })
+      Object.defineProperty(el, 'offsetParent', { value: list, configurable: true })
+    }
+    const { el: ind } = fakeEl('span', { 'data-jello-indicator': '' }, list)
+    lay(ind, 0, sizes[0]!)
+    let at = 0
+    const tabs = sizes.map((s, i) => {
+      const { el } = fakeEl('button', { role: 'tab', 'aria-selected': String(i === 0) }, list)
+      lay(el, at, s)
+      at += s
+      return el
+    })
+    return { ind, tabs }
+  }
+
+  it('snaps onto the already-selected tab at bind time, without animating', () => {
+    const { ind, tabs } = tablist()
+    tabs[0]!.setAttribute('aria-selected', 'false')
+    tabs[1]!.setAttribute('aria-selected', 'true')
+    const stop = auto()
+    const a = animsOf(ind).at(-1)!
+    expect(stateOf(a.keyframes[0]!).tx).toBeCloseTo(70, 1) // (60 + 80/2) − (0 + 60/2)
+    expect(stateOf(a.keyframes[0]!)).toEqual(stateOf(a.keyframes.at(-1)!)) // placed, not travelled
+    stop()
+  })
+
+  it('glides onto a newly selected tab: its centre, its width, same height', async () => {
+    const { ind, tabs } = tablist()
+    const stop = auto()
+    tabs[0]!.setAttribute('aria-selected', 'false')
+    tabs[2]!.setAttribute('aria-selected', 'true')
+    await tick()
+    const a = animsOf(ind).at(-1)!
+    const end = stateOf(a.keyframes.at(-1)!)
+    expect(end.tx).toBeCloseTo(160, 1) // (140 + 100/2) − (0 + 60/2)
+    expect(end.sx).toBeCloseTo(100 / 60, 2)
+    expect(end.sy).toBeCloseTo(1, 2)
+    expect(stateOf(a.keyframes[0]!).tx).toBeCloseTo(0, 1) // starts where it was
+    expect(Math.min(...a.keyframes.map((k) => stateOf(k).sy))).toBeLessThan(0.99) // stretched on the way
+    stop()
+  })
+
+  it('follows aria-orientation="vertical" down the y axis, taking the height instead', async () => {
+    const { ind, tabs } = tablist([60, 80, 100], true)
+    const stop = auto()
+    tabs[0]!.setAttribute('aria-selected', 'false')
+    tabs[2]!.setAttribute('aria-selected', 'true')
+    await tick()
+    const a = animsOf(ind).at(-1)!
+    const end = stateOf(a.keyframes.at(-1)!)
+    expect(end.ty).toBeCloseTo(160, 1) // (140 + 100/2) − (0 + 60/2)
+    expect(end.sy).toBeCloseTo(100 / 60, 2) // the tab's height
+    expect(end.sx).toBeCloseTo(1, 2) // width untouched, the mirror of the horizontal case
+    expect(end.tx).toBeCloseTo(0, 1) // and it never moved sideways
+    expect(Math.min(...a.keyframes.map((k) => stateOf(k).sx))).toBeLessThan(0.99) // narrowed on the way down
+    stop()
+  })
+
+  it('a tablist without an indicator just pops the tab', async () => {
+    const stop = auto()
+    const list = container()
+    list.setAttribute('role', 'tablist')
+    const { el: tab, anims } = fakeEl('button', { role: 'tab', 'aria-selected': 'false' }, list)
+    tab.setAttribute('aria-selected', 'true')
+    await tick()
+    expect(anims).toHaveLength(1)
+    stop()
+  })
+})
+
 describe('accordion', () => {
   /** <details> whose layout we fake: closed 40px tall, open 140px. */
   function details(parent: Element, name?: string) {
@@ -803,6 +984,61 @@ describe('accordion', () => {
     const stop = auto()
     const { s } = details(container())
     expect(click(s)).toBe(true)
+    stop()
+  })
+
+  /** <ul data-jello-height> whose layout we fake: 30px per row. */
+  function list() {
+    const ul = document.createElement('ul')
+    ul.setAttribute('data-jello-height', '')
+    Object.defineProperty(ul, 'offsetHeight', { get: () => ul.children.length * 30, configurable: true })
+    document.body.append(ul)
+    return ul
+  }
+  const li = () => document.createElement('li')
+
+  it('data-jello-height: the height springs when a row is added, and when one is removed', async () => {
+    const ul = list()
+    ul.append(li(), li()) // 60px before anything is watching
+    const stop = auto()
+
+    ul.append(li())
+    await tick()
+    const grow = heights(animsOf(ul)[0]!)
+    expect(grow[0]).toBe(60) // the height it had, not the one it has
+    expect(Math.max(...grow)).toBeGreaterThan(93) // past the 30px it grows by, then back
+    expect(grow.at(-1)).toBe(90)
+    clock = endOf(animsOf(ul)[0]!)
+    animsOf(ul)[0]!.onfinish!()
+
+    ul.lastElementChild!.remove()
+    await tick()
+    const shrink = heights(animsOf(ul).at(-1)!)
+    expect(shrink[0]).toBe(90)
+    expect(Math.min(...shrink)).toBeLessThan(57)
+    expect(shrink.at(-1)).toBe(60)
+    stop()
+  })
+
+  it('data-jello-height: shrinking to an empty list never bakes a negative height', async () => {
+    const ul = list()
+    ul.append(li()) // 30px
+    const stop = auto()
+    ul.firstElementChild!.remove() // filtered down to nothing
+    await tick()
+    const h = heights(animsOf(ul)[0]!)
+    expect(Math.min(...h)).toBe(0) // the spring overshoots past 0 — clamped, not rejected by CSS
+    expect(h.at(-1)).toBe(0)
+    stop()
+  })
+
+  it('data-jello-height: a change that leaves the height alone does not animate', async () => {
+    const ul = list()
+    ul.append(li())
+    const stop = auto()
+    ul.replaceChild(li(), ul.firstElementChild!) // one in, one out
+    await tick()
+    expect(animsOf(ul)).toHaveLength(0)
     stop()
   })
 })

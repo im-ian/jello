@@ -26,6 +26,9 @@ export {
 } from './spring'
 export { springEasing, type SpringEasing } from './css'
 
+// Design tokens — springs baked into CSS variables alongside colours and the rest
+export { tokens, type Theme, type Tokens, type TokenOptions, type TokenValue } from './tokens'
+
 // Global behaviour + extension point for custom effects
 export { configure, type JelloConfig } from './config'
 export { motionFor, type Ctx, type ChannelName, type JelloElement } from './motion'
