@@ -7,6 +7,7 @@ const cases = {
   'jello() + auto() only': `export { jello, auto } from './src/index.ts'`,
   'effects only': `export { jiggle, shake, pop, hop } from './src/index.ts'`,
   'springEasing() only': `export { springEasing } from './src/index.ts'`,
+  'tokens() only': `export { tokens } from './src/index.ts'`,
 }
 
 for (const [name, contents] of Object.entries(cases)) {

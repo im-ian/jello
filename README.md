@@ -131,6 +131,50 @@ el.style.transition = `scale ${e}`                // "976ms linear(…)"
 
 `duration`: 체감 속도(초). `bounce`: -1 ~ 1 (0 = 튀지 않음).
 
+### `tokens(tree, options?) → theme`
+
+디자인 토큰을 CSS 변수로 내보냅니다. 색·간격 같은 값은 그대로 지나가고, **스프링은 값이 됩니다**.
+
+```js
+import { spring, tokens } from 'jello'
+
+const theme = tokens({
+  color: { bg: '#f6f1f5', accent: '#d2234c' },
+  motion: { press: spring({ duration: 0.5, bounce: 0.6 }) },
+}, { prefix: 'app', dark: { color: { bg: '#1a121e' } } })
+
+theme.apply()              // <style>를 넣습니다. 지우는 함수를 돌려줍니다
+theme.var('color.bg')      // "var(--app-color-bg)"
+```
+
+```css
+:root {
+  --app-color-bg: #f6f1f5;
+  --app-color-accent: #d2234c;
+  --app-motion-press: 976ms linear(…);   /* transition 축약형 */
+  --app-motion-press-duration: 976ms;
+  --app-motion-press-easing: linear(…);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --app-color-bg: #1a121e; }
+}
+:root[data-theme="dark"] { --app-color-bg: #1a121e; }
+```
+
+같은 곡선을 JS 애니메이션과 손으로 쓴 transition이 함께 씁니다.
+
+```css
+.card { transition: scale var(--app-motion-press); }
+```
+
+| 옵션 | 기본값 | 설명 |
+| --- | --- | --- |
+| `prefix` | 없음 | 모든 변수 앞에 `--<prefix>-` |
+| `dark` | 없음 | 다크 모드에서 덮어쓸 토큰. 적은 것만 다시 선언됩니다 |
+| `selector` | `':root'` | 변수를 선언할 위치 |
+
+중첩이 이름이 됩니다: `{ color: { bgSoft } }` → `--color-bg-soft`. `spring()`이 돌려준 값만 스프링으로 봅니다 — `{ duration, bounce }`는 숫자 토큰 두 개와 구분할 수 없으니 `spring()`을 먼저 씌우세요.
+
 ### `configure(options)`
 
 ```js

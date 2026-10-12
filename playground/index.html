@@ -406,6 +406,25 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
   #tip { position: fixed; margin: 0; inset: auto; top: calc(anchor(--tip bottom) + 8px); left: anchor(--tip left); }
 }
 
+/* design tokens — everything here is painted by the variables tokens() generated at runtime */
+.swatches { display: flex; flex-wrap: wrap; gap: 8px; }
+.swatch {
+  display: inline-flex; align-items: center; gap: 8px; padding: 7px 12px 7px 7px; border-radius: 999px;
+  border: 1.5px solid var(--rule); background: var(--plate); font-family: var(--f-mono); font-size: 0.75rem; color: var(--ink-soft);
+}
+/* the ring keeps a white or near-background swatch visible in both themes */
+.swatch i { inline-size: 20px; block-size: 20px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px var(--rule); }
+.tok-try { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.tok-btn { /* no data-jello: the press below is pure CSS, driven by the spring token */
+  appearance: none; border: 0; cursor: pointer; white-space: nowrap;
+  font: 600 var(--step-0)/1.2 var(--f-body); padding: 13px 20px; border-radius: 999px;
+  background: var(--demo-color-jelly); color: var(--demo-color-ink);
+  box-shadow: inset 0 -3px 0 color-mix(in oklab, var(--demo-color-jelly), black 22%);
+  transition: scale var(--demo-motion-press);
+  -webkit-tap-highlight-color: transparent; touch-action: manipulation; user-select: none; -webkit-user-select: none;
+}
+.tok-btn:active { scale: 0.9 1.06; transition-duration: 120ms; }
+
 /* usage */
 .usage { display: grid; gap: 22px; }
 
@@ -775,6 +794,36 @@ footer { font-size: 0.75rem; color: var(--ink-soft); font-family: var(--f-mono);
     </div>
   </section>
 
+  <section aria-labelledby="h-tokens">
+    <div class="head">
+      <p class="api">tokens({ color, motion })</p>
+      <h2 id="h-tokens">디자인 토큰</h2>
+      <p>색이나 간격은 그대로 지나가고, 스프링은 CSS 변수가 돼요. 같은 곡선을 JS 애니메이션과 손으로 쓴 transition이 함께 써요.</p>
+    </div>
+    <div class="panel">
+      <div class="swatches" id="tok-swatches"></div>
+      <div class="tok-try">
+        <button class="tok-btn" type="button">눌러 보기</button>
+        <p class="note">이 버튼에는 <code>data-jello</code>가 없어요. 토큰이 만든 <code>--demo-motion-press</code> 하나로 CSS만 써서 눌려요.</p>
+      </div>
+      <div class="codebox">
+        <div class="codebox-top"><span>쓴 코드</span><button class="ghost" type="button" data-copy="tok-in">복사</button></div>
+<pre><code id="tok-in">import { spring, tokens } from 'jello'
+
+const theme = tokens({
+  color: { jelly: '#d7264f', ink: '#ffffff' },
+  motion: { press: spring({ duration: 0.5, bounce: 0.6 }) },
+}, { prefix: 'demo', dark: { color: { jelly: '#e83a63' } } })
+
+theme.apply()</code></pre>
+      </div>
+      <div class="codebox">
+        <div class="codebox-top"><span>이 페이지에 실제로 들어간 CSS</span><button class="ghost" type="button" data-copy="tok-out">복사</button></div>
+        <pre class="wrapcode"><code id="tok-out"></code></pre>
+      </div>
+    </div>
+  </section>
+
   <section aria-labelledby="h-usage">
     <div class="head">
       <p class="api">auto() · jello() · jello.css</p>
@@ -1136,6 +1185,24 @@ motionFor(el).update((c) =&gt; c.kick('tilt', impulse(s, 6), s))</code></pre>
   }
   for (const input of Object.values(t)) input.addEventListener('input', onTune)
   onTune()
+
+  /* ---------------- design tokens: the panel below is painted by what this generates */
+  const theme = J.tokens({
+    color: { jelly: '#d7264f', ink: '#ffffff' },
+    motion: { press: J.spring({ duration: 0.5, bounce: 0.6 }) },
+  }, { prefix: 'demo', dark: { color: { jelly: '#e83a63' } } })
+  theme.apply()
+  $('#tok-out').textContent = theme.css.trimEnd()
+  $('#tok-swatches').replaceChildren(...Object.entries(theme.vars)
+    .filter(([name]) => name.startsWith('--demo-color-'))
+    .map(([name, value]) => {
+      const el = document.createElement('span')
+      el.className = 'swatch'
+      const dot = document.createElement('i')
+      dot.style.background = value
+      el.append(dot, name)
+      return el
+    }))
 
   /* ---------------- copy buttons */
   for (const b of $$('[data-copy]')) {
